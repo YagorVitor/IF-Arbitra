@@ -102,7 +102,7 @@ def login(data: LoginInput, request: Request, response: Response):
                 expires_at=now + timedelta(hours=settings().session_hours),
             )
         )
-        record(db, request, Event.LOGIN_SUCCESS, user.id)
+        record(db, request, Event.LOGIN_SUCCESS, user.id, entity_type="USER")
     response.set_cookie(
         COOKIE,
         token,
@@ -127,7 +127,7 @@ def logout(request: Request, response: Response, user: User = Depends(current_us
                 LoginSession.token_hash == digest(request.cookies.get(COOKIE, ""))
             )
         )
-        record(db, request, Event.LOGOUT, user.id)
+        record(db, request, Event.LOGOUT, user.id, entity_type="USER")
     response.delete_cookie(
         COOKIE, secure=settings().cookie_secure, samesite=settings().cookie_samesite
     )

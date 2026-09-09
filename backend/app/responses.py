@@ -128,6 +128,7 @@ class AuditEventOut(BaseModel):
     occurred_at: datetime
     actor_name: str | None
     actor_user_id: UUID | None
+    entity_type: str | None
     entity_id: str | None
     request_id: UUID
     payload: dict[str, Any]

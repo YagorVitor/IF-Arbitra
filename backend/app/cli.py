@@ -46,6 +46,7 @@ def main():
         db.add(
             AuditEvent(
                 event_type="ADMIN_ACTION",
+                entity_type="USER",
                 entity_id=str(user.id),
                 request_id=str(uuid.uuid4()),
                 payload={

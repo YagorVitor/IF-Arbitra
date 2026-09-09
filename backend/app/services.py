@@ -117,6 +117,7 @@ def register_sextet(db, request, round_id, user, data):
             "priority_sequence": sextet.priority_sequence,
             "round_id": str(round_id),
         },
+        entity_type="SEXTET",
     )
     return sextet
 
@@ -186,10 +187,11 @@ def save_preferences(db, request, sextet_id, user, data):
     record(
         db,
         request,
-        Event.PREFERENCE_SAVED,
+        Event.PREFERENCE_UPDATED if version else Event.PREFERENCE_SUBMITTED,
         sextet_id,
         before={"ranking": [str(s) for s in current], "version": version},
         after={"ranking": [str(s) for s in data.staff_ids], "version": submission.version},
+        entity_type="SEXTET",
     )
     return submission
 
@@ -261,7 +263,14 @@ def process_allocation(db, request, round_id, user):
     )
     db.add(run)
     db.flush()
-    record(db, request, Event.ALLOCATION_STARTED, run.id, {"fingerprint": run.input_fingerprint})
+    record(
+        db,
+        request,
+        Event.ALLOCATION_STARTED,
+        run.id,
+        {"fingerprint": run.input_fingerprint},
+        entity_type="ALLOCATION_RUN",
+    )
     for result in allocate(candidates, [str(s) for s in staff]):
         db.add(
             Allocation(
@@ -281,6 +290,7 @@ def process_allocation(db, request, round_id, user):
             Event.GROUP_PROCESSED,
             result["sextet_id"],
             payload={"run_id": str(run.id), **result},
+            entity_type="SEXTET",
         )
     run.status, run.finished_at = "COMPLETED", database_now(db)
     round_.status = "PROCESSED"
@@ -290,5 +300,6 @@ def process_allocation(db, request, round_id, user):
         Event.ALLOCATION_FINISHED,
         run.id,
         {"round_id": str(round_id), "groups": len(groups)},
+        entity_type="ALLOCATION_RUN",
     )
     return run

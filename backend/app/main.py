@@ -162,7 +162,7 @@ def ready():
     try:
         with engine.connect() as conn:
             version = conn.scalar(text("SELECT version_num FROM alembic_version"))
-        if version != "0002_integrity":
+        if version != "0003_audit_context":
             return JSONResponse({"status": "not_ready"}, status_code=503)
     except Exception:
         return JSONResponse({"status": "not_ready"}, status_code=503)

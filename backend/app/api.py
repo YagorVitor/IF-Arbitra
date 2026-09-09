@@ -95,6 +95,7 @@ def create_student(data: UserInput, request: Request, user=Depends(admin)):
             student.id,
             {"action": "STUDENT_CREATED"},
             after={"name": student.name, "login": student.login},
+            entity_type="USER",
         )
         return student
 
@@ -116,7 +117,15 @@ def create_staff(data: StaffInput, request: Request, user=Depends(admin)):
         s = InstitutionalStaff(**data.model_dump())
         db.add(s)
         db.flush()
-        record(db, request, Event.ADMIN, s.id, {"action": "STAFF_CREATED"}, after=data.model_dump())
+        record(
+            db,
+            request,
+            Event.ADMIN,
+            s.id,
+            {"action": "STAFF_CREATED"},
+            after=data.model_dump(),
+            entity_type="INSTITUTIONAL_STAFF",
+        )
         return {"id": s.id, **data.model_dump()}
 
 
@@ -138,6 +147,7 @@ def update_staff(staff_id: UUID, data: StaffInput, request: Request, user=Depend
             {"action": "STAFF_UPDATED"},
             before=before,
             after=data.model_dump(),
+            entity_type="INSTITUTIONAL_STAFF",
         )
         return {"id": s.id, **data.model_dump()}
 
@@ -190,6 +200,7 @@ def create_round(data: RoundInput, request: Request, user=Depends(admin)):
             r.id,
             {"action": "ROUND_CREATED"},
             after=data.model_dump(mode="json"),
+            entity_type="ALLOCATION_ROUND",
         )
         db.flush()
         return round_view(db, r)
@@ -215,6 +226,7 @@ def edit_round(round_id: UUID, data: RoundInput, request: Request, user=Depends(
             {"action": "ROUND_UPDATED"},
             before=before,
             after=data.model_dump(mode="json"),
+            entity_type="ALLOCATION_ROUND",
         )
         db.flush()
         return round_view(db, r)
@@ -256,6 +268,7 @@ def transition(round_id: UUID, data: TransitionInput, request: Request, user=Dep
             {"action": data.action},
             before={"status": before},
             after={"status": after},
+            entity_type="ALLOCATION_ROUND",
         )
         return round_view(db, r)
 
@@ -275,7 +288,7 @@ def my_sextet(round_id: UUID, user=Depends(current_user)):
     "/rounds/{round_id}/sextets", response_model=SextetOut, status_code=201, tags=["Sextetos"]
 )
 def confirm_sextet(round_id: UUID, data: SextetInput, request: Request, user=Depends(current_user)):
-    independent(request, Event.SEXTET_ATTEMPT, round_id)
+    independent(request, Event.SEXTET_ATTEMPT, round_id, entity_type="ALLOCATION_ROUND")
     with SessionFactory.begin() as db:
         s = register_sextet(db, request, round_id, user, data)
         return sextet_view(db, s)
@@ -285,7 +298,7 @@ def confirm_sextet(round_id: UUID, data: SextetInput, request: Request, user=Dep
 def preferences(
     sextet_id: UUID, data: PreferencesInput, request: Request, user=Depends(current_user)
 ):
-    independent(request, Event.PREFERENCE_ATTEMPT, sextet_id)
+    independent(request, Event.PREFERENCE_ATTEMPT, sextet_id, entity_type="SEXTET")
     with SessionFactory.begin() as db:
         submission = save_preferences(db, request, sextet_id, user, data)
         return {"version": submission.version, "submitted_at": submission.submitted_at}
@@ -345,7 +358,14 @@ def process(round_id: UUID, request: Request, user=Depends(admin)):
                 )
                 db.add(run)
                 db.flush()
-                record(db, request, Event.ALLOCATION_FAILED, run.id, {"round_id": str(round_id)})
+                record(
+                    db,
+                    request,
+                    Event.ALLOCATION_FAILED,
+                    run.id,
+                    {"round_id": str(round_id)},
+                    entity_type="ALLOCATION_RUN",
+                )
         raise
 
 
@@ -415,6 +435,7 @@ def run_detail(run_id: UUID, user=Depends(admin)):
 @router.get("/admin/audit", response_model=AuditPageOut, tags=["Auditoria"])
 def audit_events(
     event: str | None = Query(None, max_length=80),
+    entity_type: str | None = Query(None, max_length=40),
     entity: str | None = Query(None, max_length=80),
     actor: UUID | None = None,
     request_id: UUID | None = None,
@@ -428,6 +449,7 @@ def audit_events(
     stmt = select(AuditEvent, User.name).outerjoin(User, AuditEvent.actor_user_id == User.id)
     for column, value in [
         (AuditEvent.event_type, event),
+        (AuditEvent.entity_type, entity_type),
         (AuditEvent.entity_id, entity),
         (AuditEvent.actor_user_id, actor),
         (AuditEvent.request_id, str(request_id) if request_id else None),
@@ -454,6 +476,7 @@ def audit_events(
                     "occurred_at": e.occurred_at,
                     "actor_name": name,
                     "actor_user_id": e.actor_user_id,
+                    "entity_type": e.entity_type,
                     "entity_id": e.entity_id,
                     "request_id": e.request_id,
                     "payload": e.payload,

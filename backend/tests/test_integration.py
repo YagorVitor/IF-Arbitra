@@ -168,6 +168,18 @@ def test_ranking_validation_version_deadline_and_priority(world, client, monkeyp
     monkeypatch.setattr("app.services.database_now", lambda db: world.round.preferences_close_at)
     assert client.put(path, json={"staff_ids": ids, "expected_version": 2}).status_code == 409
     with world.db() as db:
+        preference_events = list(
+            db.scalars(
+                select(AuditEvent.event_type)
+                .where(
+                    AuditEvent.entity_type == "SEXTET",
+                    AuditEvent.entity_id == first["id"],
+                    AuditEvent.event_type.in_(["PREFERENCE_SUBMITTED", "PREFERENCE_UPDATED"]),
+                )
+                .order_by(AuditEvent.id)
+            )
+        )
+        assert preference_events == ["PREFERENCE_SUBMITTED", "PREFERENCE_UPDATED"]
         assert db.scalar(
             select(AuditEvent).where(
                 AuditEvent.event_type == "OPERATION_REJECTED",
@@ -260,8 +272,12 @@ def test_failed_allocation_rolls_back_and_can_retry(world, client, monkeypatch):
 
 
 def test_audit_append_only_and_ready(world, client):
-    register(client, world)
+    sextet = register(client, world).json()
     assert client.get("/ready").status_code == 200
+    as_user(client, world.admin)
+    events = client.get("/api/admin/audit", params={"entity_type": "SEXTET"}).json()["events"]
+    assert any(e["entity_id"] == sextet["id"] for e in events)
+    assert {e["entity_type"] for e in events} == {"SEXTET"}
     for sql in [
         "DELETE FROM audit_events",
         "UPDATE audit_events SET payload='{}'::jsonb",
