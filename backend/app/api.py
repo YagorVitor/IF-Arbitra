@@ -18,7 +18,18 @@ from app.models import (
     SextetMember,
     User,
 )
-from app.responses import PreferenceOut, RoundOut, SextetOut, StaffOut
+from app.responses import (
+    AllocationRunDetailOut,
+    AllocationRunSummaryOut,
+    AuditPageOut,
+    PreferenceOut,
+    ResultsOut,
+    RoundOut,
+    SextetOut,
+    SextetSummaryOut,
+    StaffOut,
+    StudentSearchOut,
+)
 from app.schemas import (
     PreferencesInput,
     RoundInput,
@@ -40,7 +51,7 @@ from app.views import round_view, round_views, sextet_view
 router = APIRouter()
 
 
-@router.get("/students", tags=["Alunos"])
+@router.get("/students", response_model=list[StudentSearchOut], tags=["Alunos"])
 def students(q: str = Query(min_length=2, max_length=100), user=Depends(current_user)):
     with SessionFactory() as db:
         term = q.replace("%", "\\%").replace("_", "\\_")
@@ -99,7 +110,7 @@ def staff(user=Depends(current_user)):
         ]
 
 
-@router.post("/admin/staff", status_code=201, tags=["Administração"])
+@router.post("/admin/staff", response_model=StaffOut, status_code=201, tags=["Administração"])
 def create_staff(data: StaffInput, request: Request, user=Depends(admin)):
     with SessionFactory.begin() as db:
         s = InstitutionalStaff(**data.model_dump())
@@ -109,7 +120,7 @@ def create_staff(data: StaffInput, request: Request, user=Depends(admin)):
         return {"id": s.id, **data.model_dump()}
 
 
-@router.put("/admin/staff/{staff_id}", tags=["Administração"])
+@router.put("/admin/staff/{staff_id}", response_model=StaffOut, tags=["Administração"])
 def update_staff(staff_id: UUID, data: StaffInput, request: Request, user=Depends(admin)):
     with SessionFactory.begin() as db:
         s = db.scalar(
@@ -165,7 +176,7 @@ def set_round_staff(db, r, ids):
     db.add_all([RoundStaff(round_id=r.id, staff_id=s, order=i) for i, s in enumerate(ids)])
 
 
-@router.post("/admin/rounds", status_code=201, tags=["Administração"])
+@router.post("/admin/rounds", response_model=RoundOut, status_code=201, tags=["Administração"])
 def create_round(data: RoundInput, request: Request, user=Depends(admin)):
     with SessionFactory.begin() as db:
         r = AllocationRound(**data.model_dump(exclude={"staff_ids"}))
@@ -184,7 +195,7 @@ def create_round(data: RoundInput, request: Request, user=Depends(admin)):
         return round_view(db, r)
 
 
-@router.put("/admin/rounds/{round_id}", tags=["Administração"])
+@router.put("/admin/rounds/{round_id}", response_model=RoundOut, tags=["Administração"])
 def edit_round(round_id: UUID, data: RoundInput, request: Request, user=Depends(admin)):
     with SessionFactory.begin() as db:
         r = locked_round(db, round_id)
@@ -209,7 +220,7 @@ def edit_round(round_id: UUID, data: RoundInput, request: Request, user=Depends(
         return round_view(db, r)
 
 
-@router.post("/admin/rounds/{round_id}/transition", tags=["Administração"])
+@router.post("/admin/rounds/{round_id}/transition", response_model=RoundOut, tags=["Administração"])
 def transition(round_id: UUID, data: TransitionInput, request: Request, user=Depends(admin)):
     allowed = {
         "open": ("DRAFT", "OPEN"),
@@ -280,7 +291,11 @@ def preferences(
         return {"version": submission.version, "submitted_at": submission.submitted_at}
 
 
-@router.get("/admin/rounds/{round_id}/sextets", tags=["Administração"])
+@router.get(
+    "/admin/rounds/{round_id}/sextets",
+    response_model=list[SextetSummaryOut],
+    tags=["Administração"],
+)
 def admin_sextets(round_id: UUID, user=Depends(admin)):
     with SessionFactory() as db:
         # Bounded institutional dataset; the admin list avoids fetching each composition/ranking.
@@ -306,7 +321,11 @@ def get_sextet(sextet_id: UUID, user=Depends(current_user)):
         return sextet_view(db, owned_sextet(db, sextet_id, user))
 
 
-@router.post("/admin/rounds/{round_id}/allocate", tags=["Alocação"])
+@router.post(
+    "/admin/rounds/{round_id}/allocate",
+    response_model=AllocationRunSummaryOut,
+    tags=["Alocação"],
+)
 def process(round_id: UUID, request: Request, user=Depends(admin)):
     try:
         with SessionFactory.begin() as db:
@@ -330,7 +349,7 @@ def process(round_id: UUID, request: Request, user=Depends(admin)):
         raise
 
 
-@router.get("/rounds/{round_id}/results", tags=["Alocação"])
+@router.get("/rounds/{round_id}/results", response_model=ResultsOut, tags=["Alocação"])
 def results(round_id: UUID, user=Depends(current_user)):
     with SessionFactory() as db:
         r = db.get(AllocationRound, round_id)
@@ -376,7 +395,7 @@ def results(round_id: UUID, user=Depends(current_user)):
         }
 
 
-@router.get("/admin/runs/{run_id}", tags=["Auditoria"])
+@router.get("/admin/runs/{run_id}", response_model=AllocationRunDetailOut, tags=["Auditoria"])
 def run_detail(run_id: UUID, user=Depends(admin)):
     with SessionFactory() as db:
         run = db.get(AllocationRun, run_id)
@@ -393,7 +412,7 @@ def run_detail(run_id: UUID, user=Depends(admin)):
         }
 
 
-@router.get("/admin/audit", tags=["Auditoria"])
+@router.get("/admin/audit", response_model=AuditPageOut, tags=["Auditoria"])
 def audit_events(
     event: str | None = Query(None, max_length=80),
     entity: str | None = Query(None, max_length=80),
