@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16
+    container_name: if-arbitra-db
+    environment:
+      POSTGRES_USER: arbitra
+      POSTGRES_PASSWORD: local-only
+      POSTGRES_DB: arbitra
+    ports:
+      - "5432:5432"
+    volumes:
+      - if_arbitra_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arbitra -d arbitra"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: if-arbitra-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+psycopg://arbitra:local-only@db:5432/arbitra
+      FRONTEND_URL: http://localhost:5173
+      COOKIE_SECURE: "false"
+      COOKIE_SAMESITE: lax
+    ports:
+      - "8000:8000"
+
+volumes:
+  if_arbitra_db:

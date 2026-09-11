@@ -1,18 +1,14 @@
 // frontend/src/components/layout/Navbar.tsx
 import React from 'react';
+import { useAuth } from '../../contexts/AuthContext'; // Importar hook
 
-interface NavbarProps {
-  roundName?: string;
-  userName?: string;
-  userIdentifier?: string;
-}
+export function Navbar({ roundName = "Rodada 2026/2" }) { // roundName ainda pode ser prop, pois varia por rodada
+  const { user } = useAuth(); // Pegar o usuário real
 
-export function Navbar({ 
-  roundName = "Rodada 2026/2", 
-  userName = "Yagor Santos", 
-  userIdentifier = "AQ3021416" 
-}: NavbarProps) {
-  // Extrai iniciais (ex: "Yagor Santos" -> "YS")
+  // Fallbacks caso a tela renderize enquanto carrega
+  const userName = user?.name || "Usuário";
+  const userIdentifier = user?.login || "---";
+
   const initials = userName
     .split(' ')
     .map((n) => n[0])

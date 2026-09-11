@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface UserResponse {
   id: string;
@@ -16,19 +17,22 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-
+  const { setUser } = useAuth();
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const user = await api.post<UserResponse>('/api/auth/login', {
+      const userData = await api.post<UserResponse>('/api/auth/login', {
         login: identifier,
         password: password,
       });
 
-      if (user.role === 'STUDENT') {
+      setUser(userData); // Salva globalmente
+
+      if (userData.role === 'STUDENT') {
         navigate('/aluno');
       } else {
         navigate('/admin');
