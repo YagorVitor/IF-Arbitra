@@ -1,5 +1,3 @@
-// frontend/src/components/layout/Sidebar.tsx
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, Users, ListOrdered, FileCheck2 } from 'lucide-react';
 
@@ -16,11 +14,11 @@ export function Sidebar() {
       <nav className="p-3 flex flex-col gap-1">
         {menuItems.map((item) => {
           const Icon = item.icon;
+
           return (
             <NavLink
               key={item.path}
               to={item.path}
-              // O NavLink do react-router-dom injeta a classe 'active' automaticamente, mas podemos usar isActive na função
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-colors ${
                   isActive
