@@ -22,7 +22,7 @@ Este documento descreve a API implementada no backend do IF-Arbitra. O contrato 
 - A autenticação usa o cookie `if_arbitra_session`, criado no login como `HttpOnly`.
 - Clientes web devem enviar credenciais, por exemplo `credentials: "include"` no `fetch`.
 - Toda mutação (`POST`, `PUT`, `PATCH` ou `DELETE`) exige que o cabeçalho `Origin` seja exatamente igual ao `FRONTEND_URL` configurado no backend. Isso também se aplica ao login.
-- O tamanho máximo do corpo de uma requisição é 64 KiB.
+- O tamanho máximo do corpo de uma requisição é 64 KiB, inclusive quando transmitido sem `Content-Length`.
 - Todas as respostas incluem `X-Request-ID` e `Cache-Control: no-store`.
 - A API aceita os papéis globais `STUDENT` e `ADMIN`.
 
@@ -68,6 +68,7 @@ O cliente deve usar `code` para decidir o comportamento e `message` para apresen
 | `401` | Sessão ausente/expirada ou credenciais inválidas |
 | `403` | Papel, liderança ou origem sem permissão |
 | `404` | Recurso inexistente ou ocultado por autorização |
+| `405` | Método HTTP não permitido, com o mesmo envelope de erro |
 | `409` | Conflito de estado, concorrência, idempotência ou versão |
 | `413` | Corpo maior que 64 KiB |
 | `422` | Corpo, datas, composição ou ranking inválido |
@@ -356,7 +357,9 @@ Valores aceitos:
 | `publish` | `PROCESSED` | `PUBLISHED` |
 | `archive` | `PUBLISHED` | `ARCHIVED` |
 
-Erros principais: `ROUND_NOT_FOUND` (`404`), `INVALID_ROUND_TRANSITION` (`409`) e `ROUND_EXPIRED` (`409`).
+Ao abrir, todos os servidores da lista devem continuar ativos e a lista não pode estar vazia. A elegibilidade é revalidada dentro da transação. Depois da abertura, a composição elegível fica congelada.
+
+Erros principais: `ROUND_NOT_FOUND` (`404`), `INVALID_ROUND_TRANSITION` (`409`), `ROUND_EXPIRED` (`409`) e `STAFF_NOT_ELIGIBLE` (`422`).
 
 ## Sextetos
 
@@ -616,8 +619,8 @@ Filtros opcionais:
 | `actor` | UUID | Usuário responsável |
 | `request_id` | UUID | Correlação de uma requisição |
 | `before_id` | inteiro positivo | Cursor para a página seguinte |
-| `since` | datetime ISO 8601 | Limite inicial inclusivo |
-| `until` | datetime ISO 8601 | Limite final inclusivo |
+| `since` | datetime ISO 8601 com fuso | Limite inicial inclusivo |
+| `until` | datetime ISO 8601 com fuso | Limite final inclusivo, maior ou igual ao inicial |
 
 Paginação:
 
@@ -699,7 +702,7 @@ Resposta `200`:
 
 ### `GET /ready`
 
-Confere a conexão com PostgreSQL e exige a migration `0003_audit_context` aplicada.
+Confere a conexão com PostgreSQL e exige que as versões aplicadas coincidam com os heads das migrations distribuídas. Nesta revisão, o head é `0004_run_history`.
 
 Resposta pronta (`200`):
 

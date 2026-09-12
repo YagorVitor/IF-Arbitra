@@ -10,4 +10,7 @@
 **/*.pyc
 **/*.log
 backend/tests
+backend/build
+backend/dist
+**/*.egg-info
 backend.zip

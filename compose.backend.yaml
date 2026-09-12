@@ -9,7 +9,7 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - arbitra-postgres:/var/lib/postgresql
-      - ./backend/ops/init-test-db.sql:/docker-entrypoint-initdb.d/20-test-db.sql:ro
+      - ./backend/database/init/20-test-db.sql:/docker-entrypoint-initdb.d/20-test-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U arbitra -d arbitra"]
       interval: 5s
@@ -19,7 +19,7 @@ services:
   migrate:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: backend/deploy/Dockerfile
     depends_on:
       db:
         condition: service_healthy
@@ -27,12 +27,12 @@ services:
       ENVIRONMENT: development
       DATABASE_URL: postgresql+psycopg://arbitra:local-only@db:5432/arbitra
       FRONTEND_URL: http://localhost:5173
-    command: ["sh", "-c", "alembic upgrade head && python -m app.seed"]
+    command: ["sh", "-c", "alembic -c config/alembic.ini upgrade head && python -m app.commands.seed"]
 
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: backend/deploy/Dockerfile
     depends_on:
       migrate:
         condition: service_completed_successfully

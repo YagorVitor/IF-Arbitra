@@ -1,14 +1,13 @@
 import os
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from types import SimpleNamespace
-from uuid import uuid4
 
 import pytest
 from alembic import command
-from alembic.config import Config
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
+
+from app.db.migrations import migration_config
 
 url = os.environ.get("TEST_DATABASE_URL")
 if url:
@@ -16,22 +15,23 @@ if url:
         raise RuntimeError("TEST_DATABASE_URL must name a dedicated database ending in _test")
     os.environ["DATABASE_URL"] = url
 os.environ["ENVIRONMENT"] = "development"
+os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://test:test@127.0.0.1/arbitra_test")
 
 
 @pytest.fixture
 def world():
     if not url:
         pytest.skip("Set TEST_DATABASE_URL to run PostgreSQL integration tests")
-    from app.auth import digest, hasher
-    from app.db import SessionFactory, engine
-    from app.models import AllocationRound, InstitutionalStaff, LoginSession, RoundStaff, User
+    from app.core.security import digest, hasher
+    from app.db.models import AllocationRound, InstitutionalStaff, LoginSession, RoundStaff, User
+    from app.db.session import SessionFactory, engine
 
     engine.dispose()
     with engine.begin() as conn:
         assert conn.scalar(text("select current_database()")).endswith("_test")
         conn.execute(text("DROP SCHEMA public CASCADE"))
         conn.execute(text("CREATE SCHEMA public"))
-    command.upgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "head")
+    command.upgrade(migration_config(), "head")
     now = datetime.now(UTC)
     with SessionFactory.begin() as db:
         password_hash = hasher.hash("testing-password-2026")
@@ -76,21 +76,3 @@ def client():
         app, raise_server_exceptions=False, headers={"Origin": "http://localhost:5173"}
     ) as c:
         yield c
-
-
-def as_user(client, user):
-    client.cookies.set("if_arbitra_session", str(user.id))
-    return client
-
-
-def register(client, world, indices=range(6), key=None):
-    students = [world.users[i] for i in indices]
-    as_user(client, students[0])
-    return client.post(
-        f"/api/rounds/{world.round.id}/sextets",
-        json={
-            "name": "Sexteto teste",
-            "members": [str(s.id) for s in students],
-            "idempotency_key": str(key or uuid4()),
-        },
-    )
