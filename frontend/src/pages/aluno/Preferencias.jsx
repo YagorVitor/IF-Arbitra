@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../../api/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { roundService } from '../../services/roundService';
+import { sextetService } from '../../services/sextetService';
+
 import Button from '../../components/ui/Button';
 import Alert from '../../components/ui/Alert';
 import PreferenceListItem from '../../components/ui/PreferenceListItem';
@@ -18,25 +20,20 @@ export default function Preferencias() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchPreferencesData = async () => {
+    const loadPreferences = async () => {
       try {
         setLoading(true);
-        let targetRoundId = paramRoundId;
+        
+        const targetRound = paramRoundId 
+          ? await roundService.getById(paramRoundId)
+          : await roundService.getActiveRound();
 
-        // Se a rota não contiver roundId, descobre a rodada aberta atual
-        if (!targetRoundId) {
-          const rounds = await api.get('/api/rounds');
-          const activeRound = rounds.find(r => r.status === 'OPEN' || r.preferences_open) || rounds[0];
-          
-          if (!activeRound) {
-            setError('Nenhuma rodada ativa encontrada no momento.');
-            return;
-          }
-          targetRoundId = activeRound.id;
+        if (!targetRound) {
+          setError('Nenhuma rodada ativa encontrada no momento.');
+          return;
         }
 
-        const roundData = await api.get(`/api/rounds/${targetRoundId}`);
-        const sextetData = await api.get(`/api/rounds/${targetRoundId}/my-sextet`);
+        const sextetData = await roundService.getMySextet(targetRound.id);
         
         if (!sextetData) {
           navigate('/aluno');
@@ -44,15 +41,8 @@ export default function Preferencias() {
         }
 
         setSextet(sextetData);
+        setStaffList(formatInitialStaffList(targetRound.staff, sextetData.preferences));
 
-        if (sextetData.preferences && sextetData.preferences.length > 0) {
-          const sortedStaff = [...roundData.staff].sort((a, b) => {
-            return sextetData.preferences.indexOf(a.id) - sextetData.preferences.indexOf(b.id);
-          });
-          setStaffList(sortedStaff);
-        } else {
-          setStaffList(roundData.staff);
-        }
       } catch (err) {
         setError(err.message || 'Não foi possível carregar as preferências.');
       } finally {
@@ -60,8 +50,16 @@ export default function Preferencias() {
       }
     };
 
-    fetchPreferencesData();
+    loadPreferences();
   }, [paramRoundId, navigate]);
+
+  // Função auxiliar isolada para não poluir o fluxo principal
+  const formatInitialStaffList = (staff, savedPreferences) => {
+    if (!savedPreferences || savedPreferences.length === 0) return staff;
+    return [...staff].sort((a, b) => 
+      savedPreferences.indexOf(a.id) - savedPreferences.indexOf(b.id)
+    );
+  };
 
   const moveUp = (index) => {
     if (index === 0) return;
@@ -87,7 +85,7 @@ export default function Preferencias() {
         expected_version: sextet.preference_version,
       };
 
-      const responseData = await api.put(`/api/sextets/${sextet.id}/preferences`, payload);
+      const responseData = await sextetService.updatePreferences(sextet.id, payload);
       
       setSextet(prev => ({ ...prev, preference_version: responseData.version }));
       navigate('/aluno');
