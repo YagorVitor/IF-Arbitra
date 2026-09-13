@@ -1,14 +1,15 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
-import ProtectedRoute from './ProtectedRoute'
+import ProtectedRoute from './ProtectedRoute';
 
-//Layouts
-import AuthLayout from '../layouts/AuthLayout'
+// Layouts
+import AuthLayout from '../layouts/AuthLayout';
 import DashboardLayout from "../layouts/DashboardLayout";
 
-//Pages
+// Pages
 import Login from "../pages/Auth/Login";
 import HomeAluno from "../pages/aluno/HomeAluno";
 import MeuSexteto from "../pages/aluno/MeuSexteto";
+import Preferencias from "../pages/aluno/Preferencias";
 
 export const router = createBrowserRouter([
     {
@@ -30,7 +31,7 @@ export const router = createBrowserRouter([
         children: [
             {
                 path: '/aluno',
-                element:<DashboardLayout/>,
+                element: <DashboardLayout/>,
                 children: [
                     {
                         index: true,
@@ -39,9 +40,21 @@ export const router = createBrowserRouter([
                     {
                         path: '/aluno/sexteto',
                         element: <MeuSexteto/>
+                    },
+                    {
+                        path: '/aluno/sexteto/:roundId',
+                        element: <MeuSexteto/>
+                    },
+                    {
+                        path: '/aluno/preferencias',
+                        element: <Preferencias/>
+                    },
+                    {
+                        path: '/aluno/preferencias/:roundId',
+                        element: <Preferencias/>
                     }
                 ]
             }
         ]
     }
-])
+]);
