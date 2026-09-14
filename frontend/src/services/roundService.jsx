@@ -11,4 +11,5 @@ export const roundService = {
   },
 
   getMySextet: (roundId) => api.get(`/api/rounds/${roundId}/my-sextet`),
+  getResults: (roundId) => api.get(`/api/rounds/${roundId}/results`),
 };

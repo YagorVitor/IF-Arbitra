@@ -10,6 +10,7 @@ import Login from "../pages/Auth/Login";
 import HomeAluno from "../pages/aluno/HomeAluno";
 import MeuSexteto from "../pages/aluno/MeuSexteto";
 import Preferencias from "../pages/aluno/Preferencias";
+import ResultadoAluno from "../pages/aluno/ResultadoAluno";
 
 export const router = createBrowserRouter([
     {
@@ -52,6 +53,14 @@ export const router = createBrowserRouter([
                     {
                         path: '/aluno/preferencias/:roundId',
                         element: <Preferencias/>
+                    },
+                    {
+                        path: '/aluno/resultado',
+                        element: <ResultadoAluno/>
+                    },
+                    {
+                        path: '/aluno/resultado/:roundId',
+                        element: <ResultadoAluno/>
                     }
                 ]
             }
