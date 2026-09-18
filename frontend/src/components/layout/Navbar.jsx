@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { roundService } from '../../services/roundService';
-import IFArbitraLogo from '../IFArbitraLogo';
+import logo from '../../assets/ifsp.png';
+import bgImage from '../../assets/images/campus-colored-gradient.jpg'
+
 
 export function Navbar() {
   const { user } = useAuth();
@@ -25,9 +27,12 @@ export function Navbar() {
   const initials = userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
   return (
-    <header className="bg-[#0A3D2A] text-white h-14 px-4 flex items-center justify-between shrink-0">
+    <header 
+    className="bg-[#0A3D2A] text-white h-14 px-4 flex items-center justify-between shrink-0"
+    style={{ backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+    >
       <div className="flex items-center gap-3">
-        <IFArbitraLogo/>
+        <img src={logo} alt="Logo IF-Arbitra" className="h-8" />
         <span className="font-bold text-[15px] tracking-wide">IF-Arbitra</span>
       </div>
 

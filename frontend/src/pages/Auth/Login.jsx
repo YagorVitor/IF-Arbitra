@@ -35,7 +35,9 @@ export default function Login() {
   };
 
   return (
-    <div className="bg-white w-full max-w-[340px] rounded-[10px] shadow-2xl p-8">
+    <div 
+      className="bg-white w-full max-w-[340px] rounded-[10px] shadow-2xl p-8"
+    >
         <div className="text-center mb-7">
             <h2 className="text-[22px] font-bold text-gray-900">
             IF-Arbitra
