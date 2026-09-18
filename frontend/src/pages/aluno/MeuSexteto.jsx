@@ -4,8 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 
 
 import { useSextetManager } from '../../hooks/useSextetManager';
-import SextetForm from './components/SextetForm';
-import SextetReadOnly from './components/SextetReadOnly';
+import SextetForm from '../../components/ui/SextetForm';
+import SextetReadOnly from '../../components/ui/SextetReadOnly';
 
 export default function MeuSexteto() {
   const navigate = useNavigate();

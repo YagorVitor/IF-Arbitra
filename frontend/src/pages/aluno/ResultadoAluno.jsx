@@ -2,8 +2,8 @@ import { useParams } from 'react-router-dom';
 import { useResultsManager } from '../../hooks/useResultsManager';
 
 import Alert from '../../components/ui/Alert';
-import ResultUnpublished from './components/ResultUnpublished';
-import ResultDetails from './components/ResultDetails';
+import ResultUnpublished from '../../components/ui/ResultUnpublished';
+import ResultDetails from '../../components/ui/ResultDetails';
 
 export default function ResultadoAluno() {
   const { roundId: paramRoundId } = useParams();

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Star, Diamond, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { StudentSelect } from '../../../components/ui/StudentSelect';
+import { StudentSelect } from './StudentSelect';
 
 export default function SextetForm({ currentUser, onSubmit, isSubmitting, error, setError }) {
   const navigate = useNavigate();
