@@ -27,6 +27,9 @@ services:
       ENVIRONMENT: development
       DATABASE_URL: postgresql+psycopg://arbitra:local-only@db:5432/arbitra
       FRONTEND_URL: http://localhost:5173
+      IF_ARBITRA_ROSTER_PATH: /run/secrets/roster.json
+    volumes:
+      - ./backend/src/app/data/initial_roster.json:/run/secrets/roster.json:ro
     command: ["sh", "-c", "alembic -c config/alembic.ini upgrade head && python -m app.commands.seed"]
 
   backend:

@@ -14,7 +14,7 @@
 
 ## Integridade e concorrência
 
-Os escritores críticos bloqueiam primeiro a rodada no PostgreSQL. O cadastro também bloqueia os alunos em ordem de UUID, permitindo concorrência entre rodadas sem inverter a ordem dos locks. O índice parcial `uq_student_active_sextet` é a barreira final contra participação dupla. Constraints diferidos exigem seis integrantes e ranking completo no commit.
+Os escritores críticos bloqueiam primeiro a rodada no PostgreSQL. O cadastro também bloqueia os alunos em ordem de UUID, permitindo concorrência entre rodadas sem inverter a ordem dos locks. O índice parcial `uq_student_active_sextet` é a barreira final contra participação dupla. Constraints diferidos exigem a quantidade declarada de três a seis integrantes e ranking completo no commit.
 
 `clock_timestamp()` decide janelas após esperar pelos locks. Abertura é inclusiva; fechamento, exclusivo. A confirmação produz prioridade imutável e preferências não a alteram. Chaves de idempotência são vinculadas ao criador e não podem ser reutilizadas com conteúdo diferente.
 

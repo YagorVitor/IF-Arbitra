@@ -17,6 +17,7 @@ class InstitutionalStaff(Base):
     __tablename__ = "institutional_staff"
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(160))
+    email: Mapped[str | None] = mapped_column(String(254), unique=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -50,6 +50,7 @@ def admin_sextets(round_id: UUID, user=Depends(admin)):
             {
                 "id": s.id,
                 "name": s.name,
+                "member_count": s.member_count,
                 "registration_completed_at": s.registration_completed_at,
                 "priority_sequence": s.priority_sequence,
             }

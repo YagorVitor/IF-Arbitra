@@ -29,7 +29,7 @@ O fluxo essencial já existia: autenticação local, cadastros, rodadas, sexteto
 | README não orientava instalação/manutenção | README, arquitetura, operação, revisão rastreável e contrato OpenAPI exportado/verificado no CI | RNF-013, RNF-014, RNF-015 |
 | Backup/restauração dependiam de procedimento externo não documentado | Runbook e ensaio de dump/restauração com comparação e reprodução do resultado | RNF-016, parcialmente dependente do provedor |
 
-Não foram alterados a ordem de prioridade, os papéis no sexteto, as janelas semiabertas, a regra de um sexteto por servidor, a repescagem ou a publicação administrativa.
+A ordem de prioridade, as janelas semiabertas, a regra de um grupo por servidor, a repescagem e a publicação administrativa permanecem. O grupo agora admite de três a seis alunos e seu primeiro integrante lidera a confirmação e o ranking.
 
 ## Rastreabilidade funcional
 
@@ -51,7 +51,7 @@ Não foram alterados a ordem de prioridade, os papéis no sexteto, as janelas se
 | --- | --- |
 | CA-01, CA-02, CA-04 | `test_composition_authority_idempotency_and_constraints`; rejeição de grupo incompleto com rollback |
 | CA-03 | `test_concurrent_student_overlap`, `test_different_rounds_still_enforce_student_exclusivity`, `test_burst_50_requests` |
-| CA-05 | Liderança da confirmação no serviço; teste de recusa do líder do Trio B ao enviar preferências |
+| CA-05 | Liderança da confirmação no serviço; teste de recusa de outro integrante ao enviar preferências |
 | CA-06, CA-07 | Ranking inválido, versão obsoleta e constraint diferido do banco |
 | CA-08 | Fechamento exato de cadastro e preferências, com relógio do banco isolado nos testes de fronteira |
 | CA-09, CA-10, CA-11, CA-12 | Algoritmo, permutações da entrada, primeira opção livre, repescagem e excesso de capacidade |
@@ -60,7 +60,7 @@ Não foram alterados a ordem de prioridade, os papéis no sexteto, as janelas se
 
 ## Evidências executadas
 
-- **59 testes aprovados**, sem testes ignorados, em PostgreSQL 18.6 real e Python 3.12. Os testes usam uma base descartável e migrations completas. A execução final da suíte durou aproximadamente 12 segundos.
+- **79 testes aprovados**, sem testes ignorados, em PostgreSQL 17.8 local e Python 3.12. Os testes usam uma base descartável e migrations completas. A execução final da suíte durou aproximadamente 18 segundos.
 - **50 confirmações simultâneas:** 1 sucesso, 49 conflitos esperados, zero erros internos; seis vínculos persistidos. Nessa execução local: mediana 631 ms, p95 913 ms e máximo 937 ms. Não são metas de latência garantidas em produção.
 - Testes entre rodadas, ranking parcial no banco, restrições de histórico, rollback de alocação, arquivamento e liberação de participantes aprovados.
 - Migration nova aplicada em banco vazio e sequência `0004 → 0003 → head` verificada mantendo dados existentes.
@@ -75,7 +75,7 @@ Esses testes de concorrência usam requisições simultâneas via cliente ASGI e
 | Decisão | Regra mantida | O que precisa ser definido |
 | --- | --- | --- |
 | D-01 - capacidade | Um sexteto por servidor por rodada; excesso `UNALLOCATED` | Confirmar exclusividade ou aprovar capacidade múltipla |
-| D-02 - participantes | 14 servidores permitem 14 sextetos, total de 84 alunos | Número real de participantes e procedimento para excedentes |
+| D-02 - participantes | O CSV atual contém 83 alunos. Grupos de três a seis alunos podem ser confirmados, sem exigir sextetos completos e sem limite próprio para os grupos menores. Todos têm a mesma prioridade temporal, ranking e alocação. | Resolvido conforme decisão do usuário. |
 | D-03 - alteração | Composição e prioridade imutáveis | Prazo, autorização, nova prioridade e efeitos sobre ranking/alocação |
 | D-04 - cancelamento | Sem cancelamento; arquivamento libera todos os membros da rodada | Quem pode cancelar, quando e como preservar histórico |
 | D-05 - identidade | Login local, senha Argon2 e sessão em cookie | Provedor e contrato de SSO, se houver |

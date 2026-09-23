@@ -39,7 +39,7 @@ def test_migration_assets_are_independent_of_working_directory(tmp_path, monkeyp
     from app.db.migrations import migration_config
 
     monkeypatch.chdir(tmp_path)
-    assert ScriptDirectory.from_config(migration_config()).get_current_head() == "0004_run_history"
+    assert ScriptDirectory.from_config(migration_config()).get_current_head() == "0009_group_slots"
 
 
 def test_explicit_backend_directory_is_validated(tmp_path, monkeypatch):

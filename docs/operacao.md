@@ -14,15 +14,18 @@ Copy-Item backend/.env.example backend/.env
 
 Configure `backend/.env` com a conexão real, incluindo usuário, senha e banco. Crie `arbitra` e `arbitra_test` no PostgreSQL local. O banco com sufixo `_test` é descartável: a suíte recria seu schema em cada cenário. Não use a conexão do banco operacional em `TEST_DATABASE_URL`.
 
+Para enviar credenciais aos alunos, configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, `SMTP_STARTTLS` e, se exigidos pelo servidor, `SMTP_USERNAME` e `SMTP_PASSWORD`. A aplicação exige SMTP em produção. O seed carrega o cadastro privado de 83 alunos e 14 servidores a partir de `IF_ARBITRA_ROSTER_PATH` (caminho para JSON) ou `IF_ARBITRA_ROSTER_JSON` (conteúdo JSON). Configure exatamente uma dessas variáveis antes de executar o seed ou o comando de deploy. O arquivo local `backend/src/app/data/initial_roster.json` é ignorado pelo Git e pelo Docker; forneça-o à implantação por um canal privado. O administrador pode adicionar ou remover registros depois da carga. O login dos alunos é o próprio e-mail. Dispare `POST /api/admin/students/dispatch-credentials`, confira `failed` e `pending_remaining`, e repita se necessário. Cada aluno recebe uma senha individual de 8 caracteres. Abra a rodada apenas depois da entrega a todos, pois a chegada às caixas postais pode variar. O contrato está em `docs/backend-api.md`.
+
 ```powershell
 Set-Location backend
+$env:IF_ARBITRA_ROSTER_PATH = (Resolve-Path 'src/app/data/initial_roster.json').Path
 ..\.venv\Scripts\python.exe -m alembic -c config/alembic.ini upgrade head
 ..\.venv\Scripts\python.exe -m app.commands.seed
 ..\.venv\Scripts\python.exe -m app.commands.users seu.login "Seu nome" --admin
 ..\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload --no-proxy-headers
 ```
 
-`--reload` é somente para desenvolvimento. A senha administrativa é lida interativamente, com mínimo de 12 caracteres. Para recuperar uma conta após verificar a identidade por canal institucional, use `python -m app.commands.users seu.login --reset-password`; as sessões anteriores são revogadas. O seed preserva renomeações e ativações existentes dos 14 UUIDs.
+`--reload` é somente para desenvolvimento. A senha administrativa é lida interativamente, com mínimo de 12 caracteres. Para recuperar uma conta após verificar a identidade por canal institucional, use `python -m app.commands.users seu.login --reset-password`; as sessões anteriores são revogadas. O seed é idempotente: preserva correções, remoções e credenciais já enviadas. O antigo servidor Junior permanece no histórico e é desativado para futuras rodadas; rodadas já abertas preservam a lista congelada.
 
 ## Configuração
 
@@ -62,13 +65,15 @@ Para regenerar o arquivo de contrato, execute `python -m app.commands.export_ope
 
 1. Fazer backup e verificar que as credenciais de migração e execução estão separadas.
 2. Instalar o código/dependências desta revisão; manter o `.env` do ambiente.
-3. Executar `alembic -c config/alembic.ini upgrade head` em `backend/`. A nova migration é `0004_run_history`; ela adiciona proteções ao histórico, preservando registros existentes.
+3. Executar `alembic -c config/alembic.ini upgrade head` em `backend/`. Conferir que a versão aplicada alcançou o head distribuído (`0009_group_slots` nesta revisão).
 4. Executar o seed idempotente se necessário e reiniciar os workers.
 5. Conferir `/ready` e um login com o domínio real do frontend.
 
-Não é necessário apagar o banco ou recriar grupos. O retorno a `0003_audit_context` remove a proteção adicional das execuções; deve ser uma ação operacional planejada, e não o procedimento normal de atualização.
+Não é necessário apagar o banco ou recriar grupos. Reverter migrations deve ser uma ação operacional planejada, e não o procedimento normal de atualização.
 
 ## Produção
+
+Para a implantação de testes no Lightsail em São Paulo, com PostgreSQL gerenciado e backend em instância Ubuntu, siga [o roteiro específico](../backend/deploy/lightsail/README.md).
 
 A composição Docker fornecida é de desenvolvimento. Em produção, use PostgreSQL gerenciado, HTTPS, origem real do frontend e segredos externos ao Git. Crie uma conta proprietária para migrations e outra de execução sem `SUPERUSER`, `CREATEDB`, `CREATEROLE`, herança de conta proprietária ou privilégios concedidos por outros grupos.
 

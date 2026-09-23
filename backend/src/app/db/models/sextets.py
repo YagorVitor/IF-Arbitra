@@ -28,6 +28,7 @@ class Sextet(Base):
     round_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("allocation_rounds.id"), index=True)
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     name: Mapped[str] = mapped_column(String(80))
+    member_count: Mapped[int] = mapped_column(Integer, default=6)
     registration_completed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=text("clock_timestamp()")
     )
@@ -36,6 +37,7 @@ class Sextet(Base):
     )
     idempotency_key: Mapped[uuid.UUID] = mapped_column(UUID)
     __table_args__ = (
+        CheckConstraint("member_count BETWEEN 3 AND 6", name="ck_sextets_member_count"),
         UniqueConstraint("id", "round_id"),
         UniqueConstraint("created_by", "idempotency_key"),
         Index("ix_sextet_priority", "round_id", "registration_completed_at", "priority_sequence"),

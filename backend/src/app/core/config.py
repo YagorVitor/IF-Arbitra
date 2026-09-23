@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     session_hours: int = Field(default=8, ge=1, le=168)
     pool_size: int = Field(default=5, ge=1, le=20)
     pool_overflow: int = Field(default=5, ge=0, le=20)
+    smtp_host: str | None = None
+    smtp_port: int = Field(default=587, ge=1, le=65535)
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str | None = None
+    smtp_starttls: bool = True
 
     @model_validator(mode="after")
     def production_safety(self):
@@ -40,6 +46,10 @@ class Settings(BaseSettings):
                 raise ValueError("Produção exige HTTPS e cookies seguros")
             if "local-only" in self.database_url:
                 raise ValueError("Configure a credencial de produção")
+            if not all((self.smtp_host, self.smtp_from)):
+                raise ValueError("Produção exige SMTP")
+            if not self.smtp_starttls:
+                raise ValueError("Produção exige SMTP_STARTTLS=true")
         return self
 
 

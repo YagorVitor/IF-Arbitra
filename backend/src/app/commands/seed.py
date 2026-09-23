@@ -1,42 +1,67 @@
-"""Stable seed IDs are explicitly assigned once; names can subsequently be corrected."""
+"""Idempotently load the initial roster without undoing administrator changes."""
 
-from uuid import UUID
+import json
+import os
+from pathlib import Path
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from sqlalchemy.dialects.postgresql import insert
 
-from app.db.models import InstitutionalStaff
+from app.db.models import InstitutionalStaff, User
 from app.db.session import SessionFactory
 
-STAFF = [
-    ("b3601f91-e41f-46d8-bc43-000000000001", "Anderson Aparecido Lima da Silva"),
-    ("b3601f91-e41f-46d8-bc43-000000000002", "Carolina Valério Barra Rocha"),
-    ("b3601f91-e41f-46d8-bc43-000000000003", "Denise Elaine Emidio"),
-    ("b3601f91-e41f-46d8-bc43-000000000004", "Dione Cabral"),
-    ("b3601f91-e41f-46d8-bc43-000000000005", "Jorge Henrique de Oliveira Silva"),
-    ("b3601f91-e41f-46d8-bc43-000000000006", "Junior Fernandes Marques"),
-    ("b3601f91-e41f-46d8-bc43-000000000007", "Jurandyr Carneiro Nobre de Lacerda Neto"),
-    ("b3601f91-e41f-46d8-bc43-000000000008", "Marta Kawamura Gonçalves"),
-    ("b3601f91-e41f-46d8-bc43-000000000009", "Mauro de Lucca"),
-    ("b3601f91-e41f-46d8-bc43-00000000000a", "Natalia Maria Casagrande"),
-    ("b3601f91-e41f-46d8-bc43-00000000000b", "Raphael Carlini Zambon"),
-    ("b3601f91-e41f-46d8-bc43-00000000000c", "Renata Maria Porto Vanni"),
-    ("b3601f91-e41f-46d8-bc43-00000000000d", "Rita de Cássia Cunha Ferreira"),
-    ("b3601f91-e41f-46d8-bc43-00000000000e", "Rosana Núbia Sorbille"),
-]
+
+def load_roster() -> dict:
+    path = os.environ.get("IF_ARBITRA_ROSTER_PATH")
+    raw = os.environ.get("IF_ARBITRA_ROSTER_JSON")
+    if bool(path) == bool(raw):
+        raise RuntimeError(
+            "Configure exatamente uma fonte: IF_ARBITRA_ROSTER_PATH ou IF_ARBITRA_ROSTER_JSON"
+        )
+    roster = json.loads(Path(path).read_text(encoding="utf-8") if path else raw)
+    if (
+        not isinstance(roster, dict)
+        or not isinstance(roster.get("staff"), list)
+        or not isinstance(roster.get("students"), list)
+    ):
+        raise ValueError("Cadastro inicial inválido")
+    return roster
 
 
-def seed():
+def seed(roster: dict | None = None):
+    roster = roster if roster is not None else load_roster()
     with SessionFactory.begin() as db:
-        for id_, name in STAFF:
+        for row in roster["staff"]:
+            statement = insert(InstitutionalStaff).values(
+                id=UUID(row["id"]), name=row["name"], email=row["email"], active=True
+            )
             db.execute(
-                insert(InstitutionalStaff)
-                .values(id=UUID(id_), name=name, active=True)
-                .on_conflict_do_nothing(index_elements=["id"])
+                statement.on_conflict_do_update(
+                    index_elements=["id"],
+                    set_={"email": statement.excluded.email},
+                    where=InstitutionalStaff.email.is_(None),
+                )
+            )
+        for row in roster["students"]:
+            name, email = row["name"], row["email"]
+            db.execute(
+                insert(User)
+                .values(
+                    id=uuid5(NAMESPACE_URL, f"if-arbitra:student:{email}"),
+                    name=name,
+                    login=email,
+                    email=email,
+                    role="STUDENT",
+                    password_hash=None,
+                    active=False,
+                )
+                .on_conflict_do_nothing(index_elements=["email"])
             )
 
 
 if __name__ == "__main__":
-    seed()
+    roster = load_roster()
+    seed(roster)
     print(
-        "Seed concluído: 14 identidades institucionais verificadas; correções existentes preservadas."
+        f"Seed concluído: {len(roster['students'])} alunos e {len(roster['staff'])} servidores iniciais."
     )

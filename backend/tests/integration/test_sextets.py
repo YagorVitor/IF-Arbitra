@@ -25,6 +25,7 @@ def test_composition_authority_idempotency_and_constraints(world, client):
     assert response.status_code == 201, response.text
     first = response.json()
     assert len(first["members"]) == 6
+    assert first["member_count"] == 6
     assert register(client, world, key=key).json() == first
     changed = register(client, world, indices=[0, 1, 2, 3, 4, 6], key=key)
     assert changed.status_code == 409
@@ -57,11 +58,61 @@ def test_composition_authority_idempotency_and_constraints(world, client):
         assert db.scalar(select(func.count()).select_from(SextetMember)) == 6
 
 
-@pytest.mark.parametrize("indices", [[0, 0, 1, 2, 3, 4], [0, 1, 2, 3, 4]])
+@pytest.mark.parametrize("indices", [[0, 0, 1, 2, 3, 4], [0, 1], list(range(7))])
 def test_invalid_composition(world, client, indices):
     assert register(client, world, indices=indices).status_code == 422
     with world.db() as db:
         assert db.scalar(select(func.count()).select_from(Sextet)) == 0
+
+
+def test_groups_of_three_to_six_can_share_round(world, client):
+    expected_sizes = [3, 4, 5, 6]
+    start = 0
+    for size in expected_sizes:
+        response = register(client, world, indices=range(start, start + size))
+        assert response.status_code == 201, response.text
+        group = response.json()
+        assert group["member_count"] == size
+        assert [member["slot"] for member in group["members"]] == list(range(size))
+        start += size
+    as_user(client, world.admin)
+    listed = client.get(f"/api/admin/rounds/{world.round.id}/sextets")
+    assert [entry["member_count"] for entry in listed.json()] == expected_sizes
+    with world.db() as db:
+        assert db.scalar(select(func.count()).select_from(SextetMember)) == 18
+
+
+def test_database_rejects_incomplete_group(world):
+    with pytest.raises(IntegrityError), world.db.begin() as db:
+        group = Sextet(
+            round_id=world.round.id,
+            created_by=world.users[0].id,
+            name="Incompleto",
+            member_count=3,
+            idempotency_key=uuid4(),
+        )
+        db.add(group)
+        db.flush()
+        db.add_all(
+            SextetMember(sextet_id=group.id, slot=i, user_id=world.users[i].id) for i in range(2)
+        )
+
+
+def test_database_rejects_noncontiguous_group_slots(world):
+    with pytest.raises(IntegrityError), world.db.begin() as db:
+        group = Sextet(
+            round_id=world.round.id,
+            created_by=world.users[0].id,
+            name="Posições inválidas",
+            member_count=3,
+            idempotency_key=uuid4(),
+        )
+        db.add(group)
+        db.flush()
+        db.add_all(
+            SextetMember(sextet_id=group.id, slot=slot, user_id=world.users[i].id)
+            for i, slot in enumerate((0, 1, 5))
+        )
 
 
 def test_concurrent_student_overlap(world):

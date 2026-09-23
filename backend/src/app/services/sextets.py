@@ -33,24 +33,33 @@ def register_sextet(db, request, round_id, user, data):
     assert_window(db, round_, "registration")
     if user.role != "STUDENT" or data.members[0] != user.id:
         raise DomainError(
-            "NOT_SEXTET_LEADER", "O líder do Trio A deve ser o aluno autenticado.", 403
+            "NOT_SEXTET_LEADER", "O primeiro integrante deve ser o aluno autenticado.", 403
         )
-    if len(set(data.members)) != 6:
-        raise DomainError("DUPLICATE_MEMBER", "Selecione seis alunos diferentes.", 422)
+    if len(set(data.members)) != len(data.members):
+        raise DomainError("DUPLICATE_MEMBER", "Selecione alunos diferentes.", 422)
     students = list(
         db.scalars(
             select(User)
-            .where(User.id.in_(data.members), User.active, User.role == "STUDENT")
+            .where(
+                User.id.in_(data.members),
+                User.active,
+                User.removed_at.is_(None),
+                User.role == "STUDENT",
+            )
             .order_by(User.id)
             .with_for_update()
         )
     )
-    if len(students) != 6:
+    if len(students) != len(data.members):
         raise DomainError(
-            "INVALID_SEXTET_COMPOSITION", "Todos os seis integrantes devem ser alunos ativos.", 422
+            "INVALID_SEXTET_COMPOSITION", "Todos os integrantes devem ser alunos ativos.", 422
         )
     sextet = Sextet(
-        round_id=round_id, created_by=user.id, name=data.name, idempotency_key=data.idempotency_key
+        round_id=round_id,
+        created_by=user.id,
+        name=data.name,
+        member_count=len(data.members),
+        idempotency_key=data.idempotency_key,
     )
     db.add(sextet)
     db.flush()
@@ -68,6 +77,7 @@ def register_sextet(db, request, round_id, user, data):
         sextet.id,
         after={
             "members": [str(m) for m in data.members],
+            "member_count": len(data.members),
             "registration_completed_at": sextet.registration_completed_at.isoformat(),
             "priority_sequence": sextet.priority_sequence,
             "round_id": str(round_id),
@@ -88,7 +98,7 @@ def owned_sextet(db, sextet_id, user, leader=False):
     )
     if leader and sextet.created_by != user.id:
         raise DomainError(
-            "NOT_SEXTET_LEADER", "Somente o líder do Trio A pode enviar preferências.", 403
+            "NOT_SEXTET_LEADER", "Somente o líder do grupo pode enviar preferências.", 403
         )
     if not leader and not member and user.role != "ADMIN":
         raise DomainError("SEXTET_NOT_FOUND", "Sexteto não encontrado.", 404)

@@ -61,6 +61,16 @@ def test_database_driver_is_explicit():
         configured(database_url="sqlite:///arbitra.db")
 
 
+def test_production_requires_email_delivery_configuration():
+    with pytest.raises(ValidationError):
+        configured(environment="production")
+    configured(
+        environment="production",
+        smtp_host="smtp.example.edu.br",
+        smtp_from="IF-Arbitra <noreply@example.edu.br>",
+    )
+
+
 def test_database_url_must_be_explicit(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     with pytest.raises(ValidationError):

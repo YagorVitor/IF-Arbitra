@@ -51,7 +51,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-proxy-headers
 | Comando | Responsabilidade |
 | --- | --- |
 | `python -m app.commands.users` | Criar conta ou redefinir senha |
-| `python -m app.commands.seed` | Preparar os 14 servidores sem sobrescrever correções |
+| `python -m app.commands.seed` | Carregar cadastro privado indicado por `IF_ARBITRA_ROSTER_PATH` ou `IF_ARBITRA_ROSTER_JSON`, sem sobrescrever correções ou remoções |
 | `python -m app.commands.deploy` | Migrar, preparar seed e aplicar permissões de produção |
 | `python -m app.commands.verify_run UUID` | Reproduzir e conferir uma execução sem escrever no banco |
 | `python -m app.commands.export_openapi --check` | Conferir o contrato versionado em `docs/openapi.json` |

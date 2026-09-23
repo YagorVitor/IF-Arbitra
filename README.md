@@ -4,7 +4,8 @@ Backend para formação de sextetos, registro de prioridade temporal, preferênc
 
 ## Início com Docker
 
-Na raiz do repositório, com Docker Compose disponível:
+Na raiz do repositório, com Docker Compose disponível, coloque o cadastro privado em
+`backend/src/app/data/initial_roster.json` antes de iniciar. O arquivo não é versionado.
 
 ```sh
 docker compose -f compose.backend.yaml up --build -d
