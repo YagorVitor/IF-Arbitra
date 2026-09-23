@@ -3,7 +3,7 @@ import { Star, Diamond, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StudentSelect } from './StudentSelect';
 
-export default function SextetForm({ currentUser, onSubmit, isSubmitting, error, setError }) {
+export default function SextetForm({ currentUser, onSubmit, isSubmitting, setError }) {
   const navigate = useNavigate();
   const [trioA, setTrioA] = useState([null, null]);
   const [trioB, setTrioB] = useState([null, null, null]);
