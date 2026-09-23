@@ -37,6 +37,12 @@ class Settings(BaseSettings):
         ):
             raise ValueError("FRONTEND_URL deve conter somente a origem HTTP(S)")
         self.frontend_url = self.frontend_url.rstrip("/")
+        if self.database_url.startswith("postgresql://"):
+            self.database_url = self.database_url.replace(
+                "postgresql://", "postgresql+psycopg://", 1
+            )
+        elif self.database_url.startswith("postgres://"):
+            self.database_url = self.database_url.replace("postgres://", "postgresql+psycopg://", 1)
         if not self.database_url.startswith("postgresql+psycopg://"):
             raise ValueError("DATABASE_URL deve usar PostgreSQL com psycopg")
         if self.cookie_samesite == "none" and not self.cookie_secure:
