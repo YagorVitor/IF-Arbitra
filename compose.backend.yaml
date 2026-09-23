@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: arbitra
+      POSTGRES_PASSWORD: local-only
+      POSTGRES_DB: arbitra
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - arbitra-postgres:/var/lib/postgresql
+      - ./backend/database/init/20-test-db.sql:/docker-entrypoint-initdb.d/20-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arbitra -d arbitra"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      dockerfile: backend/deploy/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+psycopg://arbitra:local-only@db:5432/arbitra
+      FRONTEND_URL: http://localhost:5173
+    command: ["sh", "-c", "alembic -c config/alembic.ini upgrade head && python -m app.commands.seed"]
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/deploy/Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+psycopg://arbitra:local-only@db:5432/arbitra
+      FRONTEND_URL: http://localhost:5173
+      COOKIE_SECURE: "false"
+      COOKIE_SAMESITE: lax
+      POOL_SIZE: 5
+      POOL_OVERFLOW: 5
+    ports:
+      - "127.0.0.1:8000:8000"
+
+volumes:
+  arbitra-postgres:
