@@ -19,7 +19,7 @@ services:
   migrate:
     build:
       context: .
-      dockerfile: backend/deploy/Dockerfile
+      dockerfile: Dockerfile
     depends_on:
       db:
         condition: service_healthy
@@ -35,7 +35,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/deploy/Dockerfile
+      dockerfile: Dockerfile
     depends_on:
       migrate:
         condition: service_completed_successfully

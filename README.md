@@ -23,7 +23,7 @@ backend/
   src/app/          # Código: API, serviços, domínio, modelos e comandos
   config/           # Configuração de migrations
   database/         # Migrations e inicialização SQL
-  deploy/           # Dockerfile
+  deploy/           # Roteiros de implantação
   requirements/     # Versões fixadas de dependências
   tests/
     unit/           # Testes independentes do banco e regras de arquitetura
@@ -32,9 +32,16 @@ backend/
   pyproject.toml    # Pacote e ferramentas
 docs/               # Requisitos, arquitetura, operação e contrato do frontend
 frontend/           # Aplicação React/Vite
+Dockerfile          # Imagem do backend; detectada pelo Railway na raiz
 ```
 
 Veja o [mapa completo do backend](backend/README.md), incluindo os novos comandos em `app.commands`.
+
+## Railway
+
+Conecte o repositório pela raiz (`/`). O `Dockerfile` da raiz constrói apenas o backend. No serviço da API, configure `DATABASE_URL` como referência `${{Postgres.DATABASE_URL}}`. Em **Settings → Deploy**, configure o comando anterior à implantação como `python -m alembic -c config/alembic.ini upgrade head` e a verificação HTTP como `/ready`. Serviços novos do Railway não aplicam automaticamente as opções do `railway.json` legado; confira essas duas opções no painel. O endpoint `/ready` só retorna `ready` depois que o banco está acessível e as migrations foram aplicadas.
+
+Antes de usar com alunos, configure também HTTPS, `FRONTEND_URL`, `COOKIE_SECURE=true` e SMTP; veja [operação](docs/operacao.md). O cadastro privado não está no Git nem na imagem e precisa ser fornecido separadamente.
 
 
 ## Documentação

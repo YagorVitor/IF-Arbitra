@@ -24,7 +24,7 @@ backend/
 ├── database/
 │   ├── migrations/         Histórico de versões e triggers
 │   └── init/               Inicialização do PostgreSQL do Compose
-├── deploy/Dockerfile       Construção e execução do contêiner
+├── deploy/                 Roteiros de implantação (Dockerfile na raiz do repositório)
 ├── requirements/           Versões fixadas das dependências
 ├── tests/
 │   ├── unit/               Testes sem PostgreSQL e limites entre módulos
