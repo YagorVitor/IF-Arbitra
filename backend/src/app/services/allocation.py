@@ -67,11 +67,12 @@ def process_allocation(db, request, round_id, user):
         "groups": [
             {
                 "id": c.id,
+                "member_count": g.member_count,
                 "registered_at": c.registered_at.isoformat(),
                 "sequence": c.sequence,
                 "preferences": list(c.preferences),
             }
-            for c in candidates
+            for c, g in zip(candidates, groups, strict=True)
         ],
     }
     run = AllocationRun(

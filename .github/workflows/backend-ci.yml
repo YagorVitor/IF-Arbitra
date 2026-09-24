@@ -5,12 +5,14 @@ on:
     paths:
       - "backend/**"
       - "compose.backend.yaml"
+      - "Dockerfile"
       - ".github/workflows/backend-ci.yml"
       - "docs/openapi.json"
   pull_request:
     paths:
       - "backend/**"
       - "compose.backend.yaml"
+      - "Dockerfile"
       - ".github/workflows/backend-ci.yml"
       - "docs/openapi.json"
 

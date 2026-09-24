@@ -15,12 +15,10 @@ def main():
     if not make_url(os.environ["DATABASE_URL"]).database.endswith("_test"):
         raise RuntimeError("Browser fixtures require a dedicated database ending in _test")
 
-    from app.commands.seed import STAFF, seed
     from app.core.security import hasher
-    from app.db.models import AllocationRound, RoundStaff, User
+    from app.db.models import AllocationRound, InstitutionalStaff, RoundStaff, User
     from app.db.session import SessionFactory
 
-    seed()
     password = secrets.token_urlsafe(24)
     now = datetime.now(UTC)
     with SessionFactory.begin() as db:
@@ -39,6 +37,8 @@ def main():
             password_hash=hasher.hash(password),
         )
         db.add_all([*users, admin])
+        staff = [InstitutionalStaff(name=f"Servidor de validação {i}") for i in range(3)]
+        db.add_all(staff)
         round_ = AllocationRound(
             name="Validação local · dados de teste",
             registration_opens_at=now - timedelta(hours=1),
@@ -48,13 +48,8 @@ def main():
         )
         db.add(round_)
         db.flush()
-        from uuid import UUID
-
         db.add_all(
-            [
-                RoundStaff(round_id=round_.id, staff_id=UUID(s[0]), order=i)
-                for i, s in enumerate(STAFF)
-            ]
+            [RoundStaff(round_id=round_.id, staff_id=s.id, order=i) for i, s in enumerate(staff)]
         )
         db.flush()
         round_.status = "OPEN"

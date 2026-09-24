@@ -64,7 +64,7 @@ O cliente deve usar `code` para decidir o comportamento e `message` para apresen
 
 | HTTP | Uso principal |
 | --- | --- |
-| `400` | Tamanho declarado da requisição inválido |
+| `400` | Tamanho declarado da requisição inválido ou código/token de verificação inválido |
 | `401` | Sessão ausente/expirada ou credenciais inválidas |
 | `403` | Papel, liderança ou origem sem permissão |
 | `404` | Recurso inexistente ou ocultado por autorização |
@@ -84,10 +84,14 @@ O cliente deve usar `code` para decidir o comportamento e `message` para apresen
 | `GET` | `/api/auth/me` | Autenticado | `User` |
 | `POST` | `/api/auth/logout` | Autenticado | Sem corpo (`204`) |
 | `GET` | `/api/students` | Autenticado | `StudentSearch[]` |
+| `GET` | `/api/admin/students` | Admin | `AdminStudent[]` |
 | `POST` | `/api/admin/students` | Admin | `User` (`201`) |
+| `DELETE` | `/api/admin/students/{student_id}` | Admin | Sem corpo (`204`) |
+| `POST` | `/api/admin/students/dispatch-credentials` | Admin | `CredentialDispatch` |
 | `GET` | `/api/staff` | Autenticado | `Staff[]` |
 | `POST` | `/api/admin/staff` | Admin | `Staff` (`201`) |
 | `PUT` | `/api/admin/staff/{staff_id}` | Admin | `Staff` |
+| `DELETE` | `/api/admin/staff/{staff_id}` | Admin | Sem corpo (`204`) |
 | `GET` | `/api/rounds` | Autenticado | `Round[]` |
 | `GET` | `/api/rounds/{round_id}` | Autenticado | `Round` |
 | `POST` | `/api/admin/rounds` | Admin | `Round` (`201`) |
@@ -96,7 +100,7 @@ O cliente deve usar `code` para decidir o comportamento e `message` para apresen
 | `GET` | `/api/rounds/{round_id}/my-sextet` | Autenticado | `Sextet` ou `null` |
 | `POST` | `/api/rounds/{round_id}/sextets` | Aluno líder | `Sextet` (`201`) |
 | `GET` | `/api/sextets/{sextet_id}` | Membro ou admin | `Sextet` |
-| `PUT` | `/api/sextets/{sextet_id}/preferences` | Líder do Trio A | `PreferenceSubmission` |
+| `PUT` | `/api/sextets/{sextet_id}/preferences` | Líder do grupo | `PreferenceSubmission` |
 | `GET` | `/api/admin/rounds/{round_id}/sextets` | Admin | `SextetSummary[]` |
 | `POST` | `/api/admin/rounds/{round_id}/allocate` | Admin | `AllocationRunSummary` |
 | `GET` | `/api/rounds/{round_id}/results` | Autenticado | `Results` |
@@ -115,14 +119,14 @@ Corpo:
 
 ```json
 {
-  "login": "20260001",
+  "login": "ana.souza@example.edu.br",
   "password": "senha-do-usuario"
 }
 ```
 
 Regras:
 
-- `login`: de 2 a 160 caracteres; normalizado para minúsculas antes da busca.
+- `login`: de 2 a 254 caracteres; para alunos cadastrados por e-mail, é o próprio endereço, normalizado para minúsculas antes da busca.
 - `password`: de 1 a 256 caracteres.
 - Há limites persistentes por identificador e por IP em uma janela de 15 minutos.
 
@@ -132,7 +136,7 @@ Resposta `200`:
 {
   "id": "a1ce8ae8-0cbe-45cd-ac21-58e945c2a75c",
   "name": "Aluno Exemplo",
-  "login": "20260001",
+  "login": "ana.souza@example.edu.br",
   "role": "STUDENT"
 }
 ```
@@ -153,6 +157,32 @@ Erros principais: `AUTH_REQUIRED` (`401`) e `ORIGIN_REJECTED` (`403`).
 
 ## Alunos
 
+### Envio das credenciais
+
+Os **83 alunos iniciais** são carregados pelo seed a partir do cadastro privado indicado por `IF_ARBITRA_ROSTER_PATH` ou `IF_ARBITRA_ROSTER_JSON`. O cadastro real não é versionado neste repositório público. O administrador só precisa adicionar ou remover exceções. O login é o próprio e-mail em minúsculas. As contas iniciais ficam inativas e sem senha até o administrador disparar `POST /api/admin/students/dispatch-credentials`. Esse disparo inclui todas as contas pendentes que não foram removidas, sem corpo na requisição.
+
+Para cada aluno, o sistema gera uma senha aleatória individual de **8 caracteres**, usando o mesmo alfabeto sem caracteres visualmente ambíguos. O e-mail informa o usuário e a senha. Apenas o hash da senha é gravado no banco; senha e conteúdo da mensagem não entram na auditoria nem na resposta da API. A conta é ativada após o servidor SMTP aceitar a mensagem. O fluxo anterior de código de verificação e escolha de senha foi removido.
+
+O envio usa até quatro conexões em paralelo. Isso reduz a diferença entre envios, mas o tempo de entrega nas caixas postais depende do provedor de e-mail. Para uma competição, confira `failed` e `pending_remaining` e abra a rodada apenas quando todos tiverem recebido as credenciais. Disparos repetidos incluem somente contas ainda pendentes; senhas já enviadas não são reenviadas nem trocadas.
+
+Resposta `200`:
+
+```json
+{
+  "dispatch_id": "1f703ce8-0b96-46c2-8442-80c3eecb32bf",
+  "eligible": 2,
+  "sent": 1,
+  "failed": [{"email": "falha@example.edu.br", "code": "EMAIL_UNAVAILABLE"}],
+  "pending_remaining": 1
+}
+```
+
+Se SMTP não estiver configurado, a API retorna `EMAIL_UNAVAILABLE` (`503`) sem iniciar o disparo. Falhas individuais mantêm a conta pendente e aparecem em `failed` e na auditoria; um novo disparo tenta apenas as contas pendentes. A auditoria registra início, êxito ou falha de cada entrega e conclusão do lote, todos com o mesmo `dispatch_id`.
+
+### `GET /api/admin/students`
+
+Lista o cadastro para administração, incluindo contas pendentes e ativas. `include_removed=true` também inclui as removidas. Cada item informa `id`, `name`, `login`, `email`, `active`, `removed_at` e `credentials_issued`; nunca retorna senha ou hash.
+
 ### `GET /api/students?q={texto}`
 
 Pesquisa alunos ativos por nome ou login. Retorna no máximo 20 registros, ordenados por nome.
@@ -170,7 +200,7 @@ Resposta `200`:
   {
     "id": "e28f74e6-a5b9-4ca8-b646-173625ff6247",
     "name": "Ana Souza",
-    "login": "20260002",
+    "login": "ana.souza@example.edu.br",
     "occupied": false
   }
 ]
@@ -180,31 +210,36 @@ Resposta `200`:
 
 ### `POST /api/admin/students`
 
-Cria um aluno. Exige `ADMIN`.
+Adiciona um aluno ao cadastro já carregado. Exige `ADMIN`. Se o mesmo e-mail pertencer a uma conta removida, restaura essa conta como pendente, sem reutilizar a senha anterior.
 
 Corpo:
 
 ```json
 {
   "name": "Ana Souza",
-  "login": "20260002",
-  "password": "senha-inicial-segura"
+  "email": "ana.souza@example.edu.br"
 }
 ```
 
 Regras:
 
-- `name` e `login`: de 2 a 160 caracteres.
-- `password`: de 12 a 256 caracteres.
-- O login é normalizado para minúsculas e deve ser único.
+- `name`: de 2 a 160 caracteres.
+- `email`: endereço válido e único, normalizado para minúsculas.
+- O login é gerado com o próprio e-mail e deve ser único. A conta inicia inativa, sem senha.
 
 Resposta `201`: `User`.
 
-Erros principais: `ADMIN_REQUIRED` (`403`) e `LOGIN_ALREADY_EXISTS` (`409`).
+Erros principais: `ADMIN_REQUIRED` (`403`), `LOGIN_ALREADY_EXISTS` (`409`) e `EMAIL_ALREADY_EXISTS` (`409`).
+
+### `DELETE /api/admin/students/{student_id}`
+
+Remove logicamente um aluno e revoga suas sessões, preservando o histórico. Uma conta removida não recebe credenciais em novos disparos. Se o aluno integrar um sexteto ativo, retorna `STUDENT_IN_SEXTET` (`409`); arquive a rodada antes de removê-lo.
 
 ## Servidores institucionais
 
 Neste contrato, “servidor” significa uma pessoa da instituição, não infraestrutura.
+
+Os **14 servidores iniciais** também vêm do cadastro privado. O servidor removido da relação atual é preservado no histórico e desativado para futuras rodadas.
 
 ### `GET /api/staff`
 
@@ -217,6 +252,7 @@ Resposta `200`:
   {
     "id": "aed1e3bd-a9ab-409a-a347-4395bfad464b",
     "name": "Anderson Aparecido Lima da Silva",
+    "email": "servidor@example.org",
     "active": true,
     "order": null
   }
@@ -225,26 +261,30 @@ Resposta `200`:
 
 ### `POST /api/admin/staff`
 
-Cria um servidor institucional. Exige `ADMIN`.
+Adiciona um servidor institucional com `name` e `email`. Exige `ADMIN`. Se o e-mail pertencer a um servidor removido, a operação o reativa com o mesmo ID.
 
 ### `PUT /api/admin/staff/{staff_id}`
 
-Atualiza nome e estado ativo de um servidor institucional. Exige `ADMIN`.
+Atualiza nome, e-mail (opcional) e estado ativo de um servidor institucional. Exige `ADMIN`.
 
-Corpo das duas operações:
+Corpo de criação:
 
 ```json
 {
   "name": "Anderson Aparecido Lima da Silva",
-  "active": true
+  "email": "servidor@example.org"
 }
 ```
 
-`name` deve ter de 2 a 160 caracteres. `active` é opcional na criação e assume `true`.
+O corpo de atualização usa `name` e `active`, com `email` opcional. `name` deve ter de 2 a 160 caracteres. A criação inicia com `active=true`.
 
 Resposta: `Staff`. A criação usa `201`; a atualização usa `200`.
 
 Erro específico da atualização: `STAFF_NOT_FOUND` (`404`).
+
+### `DELETE /api/admin/staff/{staff_id}`
+
+Desativa o servidor para rodadas futuras, preservando seu histórico. Rodadas já abertas mantêm a lista congelada e ainda poderão alocá-lo; para retirá-lo de uma rodada em andamento, é necessário tratar essa rodada separadamente. Uma rodada em rascunho que o inclua precisará ser revisada antes da abertura.
 
 ## Rodadas
 
@@ -365,16 +405,13 @@ Erros principais: `ROUND_NOT_FOUND` (`404`), `INVALID_ROUND_TRANSITION` (`409`),
 
 ### Organização dos integrantes
 
-O array `members` possui exatamente seis UUIDs e a posição tem significado de domínio:
+O array `members` possui de três a seis UUIDs distintos. A posição `0` é o líder administrativo, que confirma o grupo e envia as preferências. As demais posições preservam a ordem escolhida. Não há limite específico para a quantidade de grupos menores por rodada. Todos participam da mesma ordem de prioridade e da mesma alocação. O nome `sextet` nas rotas é mantido por compatibilidade.
 
 | Índice | Papel |
 | --- | --- |
-| `0` | Líder do Trio A e líder administrativo do sexteto |
-| `1` | Membro A2 |
-| `2` | Membro A3 |
-| `3` | Líder do Trio B |
-| `4` | Membro B2 |
-| `5` | Membro B3 |
+| `0` | Líder do grupo |
+| `1` a `2` | Demais integrantes obrigatórios |
+| `3` a `5` | Integrantes opcionais |
 
 ### Formato `Sextet`
 
@@ -382,6 +419,7 @@ O array `members` possui exatamente seis UUIDs e a posição tem significado de 
 {
   "id": "78d0723f-74c5-49b9-976f-202d35763325",
   "name": "Sexteto Aurora",
+  "member_count": 6,
   "round_id": "560621c2-b96b-4131-aa65-044641958794",
   "leader_id": "a1ce8ae8-0cbe-45cd-ac21-58e945c2a75c",
   "registration_completed_at": "2026-09-05T18:31:24.145000Z",
@@ -399,7 +437,7 @@ O array `members` possui exatamente seis UUIDs e a posição tem significado de 
 }
 ```
 
-`members` contém os seis registros; o exemplo foi abreviado. `slot` varia de `0` a `5`.
+`members` contém de três a seis registros; o exemplo foi abreviado. `slot` varia de `0` até `member_count - 1`.
 
 ### `GET /api/rounds/{round_id}/my-sextet`
 
@@ -429,7 +467,7 @@ Corpo:
 Regras:
 
 - A rodada deve estar `OPEN` e o banco deve observar `registration_opens_at <= agora < registration_closes_at`.
-- Os seis UUIDs devem ser distintos e pertencer a alunos ativos.
+- Os três a seis UUIDs devem ser distintos e pertencer a alunos ativos.
 - O aluno autenticado deve ser o primeiro integrante e possuir papel `STUDENT`.
 - Um aluno pode pertencer a no máximo um sexteto ativo em todo o sistema.
 - `idempotency_key` deve ser gerado uma vez pelo cliente e reutilizado somente ao repetir exatamente a mesma confirmação.
@@ -462,7 +500,7 @@ Resposta `200`:
 
 ### `PUT /api/sextets/{sextet_id}/preferences`
 
-Cria ou substitui o ranking completo. Somente o líder do Trio A pode executar esta operação.
+Cria ou substitui o ranking completo. Somente o líder do grupo pode executar esta operação.
 
 Corpo:
 

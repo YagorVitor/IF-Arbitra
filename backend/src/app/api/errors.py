@@ -29,6 +29,10 @@ def integrity_error(request, exc):
         )
     elif constraint == "users_login_key":
         code, message = "LOGIN_ALREADY_EXISTS", "Este identificador já está cadastrado."
+    elif constraint == "uq_users_email":
+        code, message = "EMAIL_ALREADY_EXISTS", "Este e-mail já está cadastrado."
+    elif constraint == "uq_institutional_staff_email":
+        code, message = "STAFF_EMAIL_ALREADY_EXISTS", "Este e-mail já está cadastrado."
     else:
         code, message = (
             "INTEGRITY_CONFLICT",

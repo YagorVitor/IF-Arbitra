@@ -11,9 +11,40 @@ from app.db.models import (
     AuditEvent,
 )
 from app.main import app
-from tests.support import as_user, prepare_groups
+from tests.support import as_user, prepare_groups, register
 
 pytestmark = pytest.mark.integration
+
+
+def test_smaller_groups_rank_and_receive_staff(world, client, monkeypatch):
+    groups = [
+        register(client, world, indices=range(3)),
+        register(client, world, indices=range(3, 8)),
+        register(client, world, indices=range(8, 14)),
+    ]
+    assert all(group.status_code == 201 for group in groups), [g.text for g in groups]
+    for group, leader in zip(groups, [world.users[i] for i in (0, 3, 8)], strict=True):
+        group = group.json()
+        as_user(client, leader)
+        response = client.put(
+            f"/api/sextets/{group['id']}/preferences",
+            json={"staff_ids": [str(s.id) for s in world.staff], "expected_version": 0},
+        )
+        assert response.status_code == 200, response.text
+    monkeypatch.setattr(
+        "app.services.allocation.database_now",
+        lambda db: world.round.preferences_close_at + timedelta(seconds=1),
+    )
+    as_user(client, world.admin)
+    run = client.post(f"/api/admin/rounds/{world.round.id}/allocate")
+    assert run.status_code == 200
+    assert [
+        g["member_count"]
+        for g in client.get(f"/api/admin/runs/{run.json()['id']}").json()["snapshot"]["groups"]
+    ] == [3, 5, 6]
+    allocations = client.get(f"/api/rounds/{world.round.id}/results").json()["allocations"]
+    assert [item["sextet_id"] for item in allocations] == [g.json()["id"] for g in groups]
+    assert [item["staff_id"] for item in allocations] == [str(s.id) for s in world.staff]
 
 
 def test_allocation_concurrent_idempotent_publication_and_dispute(world, client, monkeypatch):

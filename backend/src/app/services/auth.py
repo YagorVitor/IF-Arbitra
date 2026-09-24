@@ -51,8 +51,10 @@ def authenticate(request, login, password):
                 select(User).where(User.login == identifier, User.active).with_for_update()
             )
             try:
-                hasher.verify(user.password_hash if user else dummy_hash, password)
-                valid = user is not None
+                hasher.verify(
+                    user.password_hash if user and user.password_hash else dummy_hash, password
+                )
+                valid = user is not None and user.password_hash is not None
             except VerificationError:
                 valid = False
             if not valid:

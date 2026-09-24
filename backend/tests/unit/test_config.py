@@ -61,6 +61,22 @@ def test_database_driver_is_explicit():
         configured(database_url="sqlite:///arbitra.db")
 
 
+@pytest.mark.parametrize("scheme", ["postgresql", "postgres"])
+def test_hosted_postgres_url_uses_psycopg(scheme):
+    config = configured(database_url=f"{scheme}://app:secret@db.internal/arbitra")
+    assert config.database_url == "postgresql+psycopg://app:secret@db.internal/arbitra"
+
+
+def test_production_requires_email_delivery_configuration():
+    with pytest.raises(ValidationError):
+        configured(environment="production")
+    configured(
+        environment="production",
+        smtp_host="smtp.example.edu.br",
+        smtp_from="IF-Arbitra <noreply@example.edu.br>",
+    )
+
+
 def test_database_url_must_be_explicit(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     with pytest.raises(ValidationError):

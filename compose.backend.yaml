@@ -19,7 +19,7 @@ services:
   migrate:
     build:
       context: .
-      dockerfile: backend/deploy/Dockerfile
+      dockerfile: Dockerfile
     depends_on:
       db:
         condition: service_healthy
@@ -27,12 +27,15 @@ services:
       ENVIRONMENT: development
       DATABASE_URL: postgresql+psycopg://arbitra:local-only@db:5432/arbitra
       FRONTEND_URL: http://localhost:5173
+      IF_ARBITRA_ROSTER_PATH: /run/secrets/roster.json
+    volumes:
+      - ./backend/src/app/data/initial_roster.json:/run/secrets/roster.json:ro
     command: ["sh", "-c", "alembic -c config/alembic.ini upgrade head && python -m app.commands.seed"]
 
   backend:
     build:
       context: .
-      dockerfile: backend/deploy/Dockerfile
+      dockerfile: Dockerfile
     depends_on:
       migrate:
         condition: service_completed_successfully

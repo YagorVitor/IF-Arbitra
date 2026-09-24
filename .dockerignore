@@ -14,3 +14,4 @@ backend/build
 backend/dist
 **/*.egg-info
 backend.zip
+backend/src/app/data/initial_roster.json

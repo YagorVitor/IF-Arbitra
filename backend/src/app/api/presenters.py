@@ -94,6 +94,7 @@ def sextet_view(db, sextet):
     return {
         "id": sextet.id,
         "name": sextet.name,
+        "member_count": sextet.member_count,
         "round_id": sextet.round_id,
         "leader_id": sextet.created_by,
         "registration_completed_at": sextet.registration_completed_at,

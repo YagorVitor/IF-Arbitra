@@ -1,10 +1,11 @@
 # IF-Arbitra
 
-Backend para formação de sextetos, registro de prioridade temporal, preferências por servidores institucionais e alocação determinística. Python 3.11+, FastAPI, SQLAlchemy e PostgreSQL. A implementação do frontend fica com outra equipe.
+Aplicação para formação de grupos de três a seis alunos, registro de prioridade temporal, preferências por servidores institucionais e alocação determinística. O backend usa Python 3.11+, FastAPI, SQLAlchemy e PostgreSQL. O frontend React/Vite está em `frontend/` e deve consumir o contrato atual da API.
 
 ## Início com Docker
 
-Na raiz do repositório, com Docker Compose disponível:
+Na raiz do repositório, com Docker Compose disponível, coloque o cadastro privado em
+`backend/src/app/data/initial_roster.json` antes de iniciar. O arquivo contém os 83 alunos e 14 servidores iniciais e não é versionado nem incluído na imagem Docker.
 
 ```sh
 docker compose -f compose.backend.yaml up --build -d
@@ -22,7 +23,7 @@ backend/
   src/app/          # Código: API, serviços, domínio, modelos e comandos
   config/           # Configuração de migrations
   database/         # Migrations e inicialização SQL
-  deploy/           # Dockerfile
+  deploy/           # Roteiros de implantação
   requirements/     # Versões fixadas de dependências
   tests/
     unit/           # Testes independentes do banco e regras de arquitetura
@@ -30,9 +31,17 @@ backend/
   README.md         # Mapa detalhado e comandos do backend
   pyproject.toml    # Pacote e ferramentas
 docs/               # Requisitos, arquitetura, operação e contrato do frontend
+frontend/           # Aplicação React/Vite
+Dockerfile          # Imagem do backend; detectada pelo Railway na raiz
 ```
 
 Veja o [mapa completo do backend](backend/README.md), incluindo os novos comandos em `app.commands`.
+
+## Railway
+
+Conecte o repositório pela raiz (`/`). O `Dockerfile` da raiz constrói apenas o backend. No serviço da API, configure `DATABASE_URL` como referência `${{Postgres.DATABASE_URL}}`. Em **Settings → Deploy**, configure o comando anterior à implantação como `python -m alembic -c config/alembic.ini upgrade head` e a verificação HTTP como `/ready`. Serviços novos do Railway não aplicam automaticamente as opções do `railway.json` legado; confira essas duas opções no painel. O endpoint `/ready` só retorna `ready` depois que o banco está acessível e as migrations foram aplicadas.
+
+Antes de usar com alunos, configure também HTTPS, `FRONTEND_URL`, `COOKIE_SECURE=true` e SMTP; veja [operação](docs/operacao.md). O cadastro privado não está no Git nem na imagem e precisa ser fornecido separadamente.
 
 
 ## Documentação
@@ -44,6 +53,8 @@ Veja o [mapa completo do backend](backend/README.md), incluindo os novos comando
 
 ## Regras atuais
 
-Cada sexteto tem seis alunos; o integrante da posição 0 é o líder administrativo. Um aluno participa de no máximo um sexteto ativo, inclusive entre rodadas. A prioridade usa horário do banco e sequência imutável. Rankings completos são processados antes da repescagem; cada servidor recebe até um sexteto por rodada e excedentes ficam `UNALLOCATED`. A publicação é administrativa e separada do cálculo.
+O administrador pode adicionar ou remover alunos e servidores do cadastro inicial. Quando aciona o disparo de credenciais, cada aluno pendente recebe por e-mail seu login (o próprio e-mail) e uma senha individual de oito caracteres. A rodada deve ser aberta depois da conferência das entregas.
+
+Cada grupo tem de três a seis alunos; o integrante da posição 0 confirma o grupo e ordena suas preferências. Um aluno participa de no máximo um grupo ativo, inclusive entre rodadas. A prioridade usa horário do banco e sequência imutável. Rankings completos são processados antes da repescagem; cada servidor recebe até um grupo por rodada e excedentes ficam `UNALLOCATED`. A publicação é administrativa e separada do cálculo.
 
 Alteração/cancelamento de sextetos, capacidade maior que um e SSO dependem das decisões institucionais registradas na revisão. Nenhuma dessas políticas foi presumida nesta entrega.
