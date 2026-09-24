@@ -31,7 +31,7 @@ export default function MeuSexteto() {
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">{isReadOnly ? 'O seu sexteto' : 'Formar sexteto'}</h1>
-          <p className="text-gray-500 text-sm">{isReadOnly ? `Prioridade registrada na rodada: #${String(existingSextet.priority_sequence || 0).padStart(2, '0')}` : 'O seu sexteto deve ter exatamente 6 alunos, organizados em dois trios.'}</p>
+          <p className="text-gray-500 text-sm">{isReadOnly ? `Prioridade registrada na rodada: #${String(existingSextet.priority_sequence || 0).padStart(2, '0')}` : 'Escolha de 3 a 6 alunos, incluindo você.'}</p>
         </div>
         {isReadOnly && <div className="self-start sm:self-auto bg-green-50 text-green-800 px-3 py-1.5 rounded-full text-xs font-bold border border-green-200 flex items-center gap-2"><CheckCircle2 size={16} className="text-green-600" /> Confirmado</div>}
       </div>

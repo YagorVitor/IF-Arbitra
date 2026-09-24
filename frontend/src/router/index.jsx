@@ -11,6 +11,9 @@ import HomeAluno from "../pages/aluno/HomeAluno";
 import MeuSexteto from "../pages/aluno/MeuSexteto";
 import Preferencias from "../pages/aluno/Preferencias";
 import ResultadoAluno from "../pages/aluno/ResultadoAluno";
+import AdminCadastros from '../pages/admin/AdminCadastros';
+import AdminRodadas from '../pages/admin/AdminRodadas';
+import AdminAuditoria from '../pages/admin/AdminAuditoria';
 
 export const router = createBrowserRouter([
     {
@@ -28,7 +31,7 @@ export const router = createBrowserRouter([
         ]
     },
     {
-        element: <ProtectedRoute/>,
+        element: <ProtectedRoute role="STUDENT"/>,
         children: [
             {
                 path: '/aluno',
@@ -65,5 +68,19 @@ export const router = createBrowserRouter([
                 ]
             }
         ]
-    }
+    },
+    {
+        element: <ProtectedRoute role="ADMIN"/>,
+        children: [
+            {
+                path: '/admin',
+                element: <DashboardLayout/>,
+                children: [
+                    { index: true, element: <AdminRodadas/> },
+                    { path: 'cadastros', element: <AdminCadastros/> },
+                    { path: 'auditoria', element: <AdminAuditoria/> },
+                ],
+            },
+        ],
+    },
 ]);
