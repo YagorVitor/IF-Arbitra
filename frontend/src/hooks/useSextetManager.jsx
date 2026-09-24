@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { roundService } from '../services/roundService';
 import { studentService } from '../services/studentService';
 
@@ -10,6 +10,7 @@ export function useSextetManager(currentUser, initialRoundId) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const confirmation = useRef(null);
 
   useEffect(() => {
     async function resolveRound() {
@@ -50,11 +51,19 @@ export function useSextetManager(currentUser, initialRoundId) {
     if (!round?.registration_open) { setError('A janela de confirmação desta rodada está encerrada.'); return; }
     setIsSubmitting(true); setError('');
     try {
-      const payload = { name: `Sexteto de ${currentUser.name.split(' ')[0]}`, members: memberIds, idempotency_key: crypto.randomUUID() };
+      const signature = memberIds.join(':');
+      if (confirmation.current?.signature !== signature) {
+        confirmation.current = { signature, key: crypto.randomUUID() };
+      }
+      const payload = { name: `Grupo de ${currentUser.name.split(' ')[0]}`, members: memberIds, idempotency_key: confirmation.current.key };
       const createdSextet = await roundService.createSextet(roundId, payload);
       setExistingSextet(createdSextet);
     } catch (err) {
-      const messages = { INTEGRITY_CONFLICT: 'Um dos integrantes já pertence a outro sexteto ativo.', REGISTRATION_WINDOW_CLOSED: 'A janela de confirmação desta rodada foi encerrada.', IDEMPOTENCY_CONFLICT: 'Esta confirmação já foi usada com outra composição.', INVALID_SEXTET_COMPOSITION: 'Todos os seis integrantes devem ser alunos ativos.', DUPLICATE_MEMBER: 'Selecione seis alunos diferentes.' };
+      if (err.code === 'STUDENT_ALREADY_IN_SEXTET') {
+        const existing = await roundService.getMySextet(roundId).catch(() => null);
+        if (existing) { setExistingSextet(existing); return; }
+      }
+      const messages = { INTEGRITY_CONFLICT: 'Um dos integrantes já pertence a outro grupo ativo.', STUDENT_ALREADY_IN_SEXTET: 'Um dos integrantes já pertence a outro grupo ativo.', REGISTRATION_WINDOW_CLOSED: 'A janela de confirmação desta rodada foi encerrada.', IDEMPOTENCY_CONFLICT: 'Esta confirmação já foi usada com outra composição.', INVALID_SEXTET_COMPOSITION: 'O grupo deve ter de 3 a 6 alunos ativos.', DUPLICATE_MEMBER: 'Selecione alunos diferentes.' };
       setError(messages[err.code] || err.message || 'Falha ao confirmar o sexteto.');
     } finally { setIsSubmitting(false); }
   };

@@ -100,7 +100,7 @@ export function StudentSelect({ label, value, onChange, icon }) {
           <input
             type="text"
             className="w-full px-3 py-2 pl-9 border border-gray-300 rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-[#0A3D2A] focus:border-[#0A3D2A] placeholder-gray-400"
-            placeholder="Buscar aluno por nome ou prontuário..."
+            placeholder="Buscar aluno por nome ou e-mail..."
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
