@@ -12,6 +12,7 @@ import MeuSexteto from "../pages/aluno/MeuSexteto";
 import Preferencias from "../pages/aluno/Preferencias";
 import ResultadoAluno from "../pages/aluno/ResultadoAluno";
 import AdminCadastros from '../pages/admin/AdminCadastros';
+import AdminRodadas from '../pages/admin/AdminRodadas';
 
 export const router = createBrowserRouter([
     {
@@ -73,7 +74,10 @@ export const router = createBrowserRouter([
             {
                 path: '/admin',
                 element: <DashboardLayout/>,
-                children: [{ index: true, element: <AdminCadastros/> }],
+                children: [
+                    { index: true, element: <AdminRodadas/> },
+                    { path: 'cadastros', element: <AdminCadastros/> },
+                ],
             },
         ],
     },

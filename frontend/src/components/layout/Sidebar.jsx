@@ -28,7 +28,10 @@ export function Sidebar() {
   }, [user?.role]);
 
   const menuItems = user?.role === 'ADMIN'
-    ? [{ path: '/admin', icon: Users, label: 'Cadastros e credenciais', exact: true }]
+    ? [
+      { path: '/admin', icon: Home, label: 'Rodadas', exact: true },
+      { path: '/admin/cadastros', icon: Users, label: 'Cadastros e credenciais', exact: true },
+    ]
     : baseMenuItems;
 
   return (
