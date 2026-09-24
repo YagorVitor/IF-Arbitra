@@ -61,13 +61,13 @@ export default function Login() {
                 htmlFor="identifier"
                 className="text-[13px] font-medium text-gray-700"
             >
-                Identificador
+                E-mail
             </label>
 
             <input
                 id="identifier"
                 type="text"
-                placeholder="AQ3021416"
+                placeholder="seu.email@instituicao.edu.br"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required

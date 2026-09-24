@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, Users, ListOrdered, FileCheck2 } from 'lucide-react';
 import { roundService } from '../../services/roundService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const baseMenuItems = [
   { path: '/aluno', icon: Home, label: 'Início', exact: true },
@@ -11,10 +12,12 @@ const baseMenuItems = [
 ];
 
 export function Sidebar() {
+  const { user } = useAuth();
   const [roundId, setRoundId] = useState(null);
 
   // Consulta a rodada e acopla o UUID nas rotas laterais dinamicamente
   useEffect(() => {
+    if (user?.role === 'ADMIN') return;
     let isMounted = true;
     roundService.getActiveRound()
       .then(round => {
@@ -22,12 +25,16 @@ export function Sidebar() {
       })
       .catch(console.error);
     return () => { isMounted = false; };
-  }, []);
+  }, [user?.role]);
+
+  const menuItems = user?.role === 'ADMIN'
+    ? [{ path: '/admin', icon: Users, label: 'Cadastros e credenciais', exact: true }]
+    : baseMenuItems;
 
   return (
     <aside className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col shrink-0 min-h-[calc(100vh-3.5rem)]">
       <nav className="p-3 flex flex-col gap-1">
-        {baseMenuItems.map((item) => {
+        {menuItems.map((item) => {
           const Icon = item.icon;
           const targetPath = (item.exact || !roundId) ? item.path : `${item.path}/${roundId}`;
 
