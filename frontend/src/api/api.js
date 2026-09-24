@@ -1,21 +1,12 @@
-const API_URL = import.meta.env.VITE_API_URL;
-const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL;
+// In production the Vercel rewrite keeps the session cookie on the site origin.
+// A full URL remains available for local development against a local backend.
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 async function fetchApi(endpoint, options = {}) {
   const headers = new Headers(options.headers);
 
-  if (!headers.has('Content-Type') && options.method !== 'GET') {
+  if (!headers.has('Content-Type') && options.body !== undefined) {
     headers.set('Content-Type', 'application/json');
-  }
-
-  const isMutation =
-    options.method &&
-    ['POST', 'PUT', 'PATCH', 'DELETE'].includes(
-      options.method.toUpperCase()
-    );
-
-  if (isMutation) {
-    headers.set('Origin', FRONTEND_URL);
   }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
@@ -38,7 +29,10 @@ async function fetchApi(endpoint, options = {}) {
       };
     }
 
-    throw errorData;
+    throw {
+      ...errorData,
+      request_id: errorData.request_id || response.headers.get('X-Request-ID'),
+    };
   }
 
   if (response.status === 204) {
