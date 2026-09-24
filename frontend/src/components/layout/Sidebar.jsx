@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, ListOrdered, FileCheck2 } from 'lucide-react';
+import { Home, Users, ListOrdered, FileCheck2, ScrollText } from 'lucide-react';
 import { roundService } from '../../services/roundService';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -31,6 +31,7 @@ export function Sidebar() {
     ? [
       { path: '/admin', icon: Home, label: 'Rodadas', exact: true },
       { path: '/admin/cadastros', icon: Users, label: 'Cadastros e credenciais', exact: true },
+      { path: '/admin/auditoria', icon: ScrollText, label: 'Auditoria', exact: true },
     ]
     : baseMenuItems;
 
