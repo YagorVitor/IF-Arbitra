@@ -12,7 +12,7 @@ export default function MeuSexteto() {
   const currentUser = { id: user?.id, name: user?.name || 'A carregar...', login: user?.login || '' };
   const { round, existingSextet, isOccupiedGlobally, isLoading, isSubmitting, error, setError, submitSextet } = useSextetManager(currentUser, roundId);
 
-  if (isLoading) return <div className="max-w-5xl mx-auto py-16 flex justify-center text-gray-500 font-medium">A carregar informações...</div>;
+  if (isLoading) return <div className="app-card app-card-pad" role="status">Carregando informações...</div>;
 
   if (isOccupiedGlobally && !existingSextet) return (
     <div className="max-w-3xl mx-auto py-16 flex flex-col items-center text-center">
@@ -27,13 +27,13 @@ export default function MeuSexteto() {
   const canRegister = round?.registration_open === true;
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="app-page">
+      <div className="app-page-head">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">{isReadOnly ? 'O seu sexteto' : 'Formar sexteto'}</h1>
-          <p className="text-gray-500 text-sm">{isReadOnly ? `Prioridade registrada na rodada: #${String(existingSextet.priority_sequence || 0).padStart(2, '0')}` : 'Escolha de 3 a 6 alunos, incluindo você.'}</p>
+          <p className="app-eyebrow">{round?.name || 'Formação de grupos'}</p><h1 className="app-title">{isReadOnly ? 'Meu sexteto' : 'Formar sexteto'}</h1>
+          <p className="app-subtitle">{isReadOnly ? `Prioridade registrada na rodada: #${String(existingSextet.priority_sequence || 0).padStart(2, '0')}` : 'Escolha de 3 a 6 alunos, incluindo você.'}</p>
         </div>
-        {isReadOnly && <div className="self-start sm:self-auto bg-green-50 text-green-800 px-3 py-1.5 rounded-full text-xs font-bold border border-green-200 flex items-center gap-2"><CheckCircle2 size={16} className="text-green-600" /> Confirmado</div>}
+        {isReadOnly && <div className="app-pill"><CheckCircle2 size={14}/>Confirmado</div>}
       </div>
 
       {error && <div className="mb-6 bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 flex items-center gap-3 text-sm"><AlertCircle className="shrink-0 text-red-600" size={20} /><span>{error}</span></div>}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Star, Info } from 'lucide-react';
+import { Crown, Info, UsersRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StudentSelect } from './StudentSelect';
 
@@ -30,34 +30,16 @@ export default function SextetForm({ currentUser, onSubmit, isSubmitting, setErr
 
   return (
     <>
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-        <div className="bg-green-50 border-b border-green-100 px-5 py-3">
-          <h2 className="text-green-800 font-bold text-sm tracking-wide">INTEGRANTES · 3 A 6 ALUNOS</h2>
-        </div>
-        <div className="p-5 grid gap-6 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[13px] font-semibold text-gray-700 flex items-center gap-2">
-              <Star size={16} className="text-yellow-500 fill-yellow-500" />
-              Líder do grupo (você)
-            </label>
-            <div className="flex flex-col px-3 py-2 border border-gray-200 bg-gray-50 rounded-md text-[13px]">
-              <span className="font-medium text-gray-900">{currentUser.name}</span>
-              <span className="text-gray-500 text-xs">{currentUser.login}</span>
-            </div>
-          </div>
-          {selected.map((student, index) => (
-            <StudentSelect
-              key={index}
-              label={`Participante ${index + 2}${index < 2 ? ' · obrigatório' : ' · opcional'}`}
-              value={student}
-              onChange={(value) => changeMember(index, value)}
-            />
-          ))}
-        </div>
+      <div className="app-group-grid">
+        <section className="app-group-panel"><h2><UsersRound size={17} className="inline mr-2"/>TRIO A · obrigatório</h2>
+          <div className="flex flex-col gap-1.5 mb-3"><span className="text-[13px] font-semibold text-gray-700 flex items-center gap-2"><Crown size={16} className="text-amber-500"/>Líder do sexteto (você)</span><div className="flex flex-col px-3 py-2 border border-green-200 bg-white rounded-md text-[13px]"><strong>{currentUser.name}</strong><span className="text-gray-500 text-xs">{currentUser.login}</span></div></div>
+          {selected.slice(0,2).map((student,index) => <StudentSelect key={index} label={`Participante ${index + 2} · obrigatório`} value={student} onChange={(value) => changeMember(index,value)}/>)}</section>
+        <section className="app-group-panel blue"><h2><UsersRound size={17} className="inline mr-2"/>TRIO B · opcional</h2><p className="text-xs text-slate-600 mb-4">Acrescente até três alunos, sempre em sequência.</p>
+          {selected.slice(2).map((student,index) => <StudentSelect key={index+2} label={`Participante ${index + 4} · opcional`} value={student} onChange={(value) => changeMember(index+2,value)}/>)}</section>
       </div>
 
-      <div className="mt-8 flex flex-col items-end gap-6">
-        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex gap-3 max-w-2xl w-full">
+      <div className="mt-5 flex flex-col items-end gap-5">
+        <div className="app-notice flex gap-3 w-full">
           <Info className="text-blue-600 shrink-0 mt-0.5" size={20} />
           <div className="flex flex-col gap-1">
             <h4 className="text-sm font-bold text-blue-900">Antes de confirmar</h4>
@@ -66,12 +48,12 @@ export default function SextetForm({ currentUser, onSubmit, isSubmitting, setErr
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={() => navigate('/aluno')} className="px-5 py-2 rounded-md text-[14px] font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
+        <div className="app-confirm-bar">
+          <button type="button" onClick={() => navigate('/aluno')} className="app-button ghost">
             Cancelar
           </button>
-          <button type="button" disabled={isSubmitting} onClick={handleConfirm} className="px-5 py-2 rounded-md text-[14px] font-medium text-white bg-[#0A3D2A] hover:bg-[#072a1d] transition-colors shadow-sm disabled:opacity-50">
-            {isSubmitting ? 'Confirmando...' : 'Confirmar grupo'}
+          <button type="button" disabled={isSubmitting} onClick={handleConfirm} className="app-button">
+            {isSubmitting ? 'Confirmando...' : 'Confirmar sexteto'}
           </button>
         </div>
       </div>

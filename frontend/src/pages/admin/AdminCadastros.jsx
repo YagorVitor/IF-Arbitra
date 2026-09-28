@@ -90,21 +90,22 @@ export default function AdminCadastros() {
   const activeStaff = staff.filter((person) => person.active !== false);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Cadastros e credenciais</h1>
-        <p className="text-sm text-gray-600 mt-1">Os cadastros iniciais já estão no sistema. Inclua ou remova exceções antes de enviar as credenciais.</p>
+    <div className="app-page">
+      <div className="app-page-head"><div>
+        <p className="app-eyebrow">Administração · participantes</p><h1 className="app-title">Cadastros e credenciais</h1>
+        <p className="app-subtitle">Inclua ou remova exceções antes de enviar as credenciais aos alunos.</p>
+      </div><span className="app-pill neutral">{students.length} alunos</span>
       </div>
       {error && <div role="alert" className="p-3 rounded bg-red-50 text-red-800 border border-red-200">{error}</div>}
       {notice && <div role="status" className="p-3 rounded bg-green-50 text-green-800 border border-green-200">{notice}</div>}
       {loading ? <p>Carregando cadastros...</p> : <>
-        <section className="border rounded-lg p-5 space-y-4">
+        <section className="app-card app-card-pad space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold">Alunos ({students.length})</h2>
               <p className="text-sm text-gray-600">{pending} pendentes de credenciais; {students.length - pending} já receberam.</p>
             </div>
-            <button type="button" disabled={busy || pending === 0} onClick={sendCredentials} className="px-4 py-2 rounded bg-[#0A3D2A] text-white disabled:opacity-50">{busy ? 'Aguarde...' : `Enviar credenciais (${pending})`}</button>
+            <button type="button" disabled={busy || pending === 0} onClick={sendCredentials} className="app-button">{busy ? 'Aguarde...' : `Enviar credenciais (${pending})`}</button>
           </div>
           {dispatch && <div role="status" className="p-3 rounded bg-blue-50 text-blue-900 text-sm">
             Lote: {dispatch.sent} enviados; {dispatch.pending_remaining} ainda pendentes. {dispatch.failed.length > 0 && `${dispatch.failed.length} falhas. Revise os endereços e tente novamente somente para os pendentes.`}
@@ -113,24 +114,24 @@ export default function AdminCadastros() {
           <form onSubmit={addStudent} className="flex flex-wrap gap-2">
             <input aria-label="Nome do aluno" required minLength={2} maxLength={160} placeholder="Nome do aluno" value={studentForm.name} onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })} className="border rounded px-3 py-2 flex-1 min-w-48" />
             <input aria-label="E-mail do aluno" type="email" required placeholder="E-mail do aluno" value={studentForm.email} onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })} className="border rounded px-3 py-2 flex-1 min-w-48" />
-            <button disabled={busy} className="px-4 py-2 border rounded disabled:opacity-50">Adicionar aluno</button>
+            <button disabled={busy} className="app-button secondary">Adicionar aluno</button>
           </form>
-          <div className="max-h-80 overflow-auto border rounded">
+          <div className="max-h-80 overflow-auto border rounded app-data-table">
             <table className="w-full text-sm"><thead className="bg-gray-50"><tr><th className="text-left p-2">Nome</th><th className="text-left p-2">E-mail</th><th className="text-left p-2">Situação</th><th className="p-2">Ação</th></tr></thead>
-              <tbody>{students.map((student) => <tr key={student.id} className="border-t"><td className="p-2">{student.name}</td><td className="p-2">{student.email}</td><td className="p-2">{student.credentials_issued ? 'Credenciais enviadas' : 'Pendente'}</td><td className="p-2 text-right"><button type="button" disabled={busy} onClick={() => removeStudent(student)} className="text-red-700 disabled:opacity-50">Remover</button></td></tr>)}</tbody>
+              <tbody>{students.map((student) => <tr key={student.id} className="border-t"><td data-label="Nome" className="p-2">{student.name}</td><td data-label="E-mail" className="p-2">{student.email}</td><td data-label="Situação" className="p-2">{student.credentials_issued ? 'Credenciais enviadas' : 'Pendente'}</td><td data-label="Ação" className="p-2 text-right"><button type="button" disabled={busy} onClick={() => removeStudent(student)} className="text-red-700 disabled:opacity-50">Remover</button></td></tr>)}</tbody>
             </table>
           </div>
         </section>
-        <section className="border rounded-lg p-5 space-y-4">
+        <section className="app-card app-card-pad space-y-4">
           <h2 className="text-lg font-semibold">Servidores ativos ({activeStaff.length})</h2>
           <form onSubmit={addStaff} className="flex flex-wrap gap-2">
             <input aria-label="Nome do servidor" required minLength={2} maxLength={160} placeholder="Nome do servidor" value={staffForm.name} onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })} className="border rounded px-3 py-2 flex-1 min-w-48" />
             <input aria-label="E-mail do servidor" type="email" required placeholder="E-mail do servidor" value={staffForm.email} onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })} className="border rounded px-3 py-2 flex-1 min-w-48" />
-            <button disabled={busy} className="px-4 py-2 border rounded disabled:opacity-50">Adicionar servidor</button>
+            <button disabled={busy} className="app-button secondary">Adicionar servidor</button>
           </form>
-          <div className="max-h-80 overflow-auto border rounded">
+          <div className="max-h-80 overflow-auto border rounded app-data-table">
             <table className="w-full text-sm"><thead className="bg-gray-50"><tr><th className="text-left p-2">Nome</th><th className="text-left p-2">E-mail</th><th className="p-2">Ação</th></tr></thead>
-              <tbody>{activeStaff.map((person) => <tr key={person.id} className="border-t"><td className="p-2">{person.name}</td><td className="p-2">{person.email}</td><td className="p-2 text-right"><button type="button" disabled={busy} onClick={() => removeStaff(person)} className="text-red-700 disabled:opacity-50">Remover</button></td></tr>)}</tbody>
+              <tbody>{activeStaff.map((person) => <tr key={person.id} className="border-t"><td data-label="Nome" className="p-2">{person.name}</td><td data-label="E-mail" className="p-2">{person.email}</td><td data-label="Ação" className="p-2 text-right"><button type="button" disabled={busy} onClick={() => removeStaff(person)} className="text-red-700 disabled:opacity-50">Remover</button></td></tr>)}</tbody>
             </table>
           </div>
         </section>

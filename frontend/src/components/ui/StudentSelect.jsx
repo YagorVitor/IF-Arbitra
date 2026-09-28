@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useId } from 'react';
 import { Search } from 'lucide-react';
 import { api } from '../../api/api';
 
@@ -7,6 +7,8 @@ export function StudentSelect({ label, value, onChange, icon }) {
   const [results, setResults] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searchError, setSearchError] = useState(false);
+  const inputId = useId();
 
   const wrapperRef = useRef(null);
 
@@ -35,23 +37,25 @@ export function StudentSelect({ label, value, onChange, icon }) {
       return;
     }
 
+    let active = true;
     const timer = setTimeout(async () => {
       setLoading(true);
+      setSearchError(false);
 
       try {
         const data = await api.get(
           `/api/students?q=${encodeURIComponent(query)}`
         );
 
-        setResults(data);
-      } catch (error) {
-        console.error('Erro ao buscar alunos', error);
+        if (active) setResults(data);
+      } catch {
+        if (active) { setResults([]); setSearchError(true); }
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }, 400);
 
-    return () => clearTimeout(timer);
+    return () => { active = false; clearTimeout(timer); };
   }, [query]);
 
   function handleSelect(student) {
@@ -69,7 +73,7 @@ export function StudentSelect({ label, value, onChange, icon }) {
       className="flex flex-col gap-1.5 w-full relative"
       ref={wrapperRef}
     >
-      <label className="text-[13px] font-semibold text-gray-700 flex items-center gap-2">
+      <label htmlFor={inputId} className="text-[13px] font-semibold text-gray-700 flex items-center gap-2">
         {icon}
         {label}
       </label>
@@ -89,6 +93,7 @@ export function StudentSelect({ label, value, onChange, icon }) {
           <button
             type="button"
             onClick={() => onChange(null)}
+            aria-label={`Remover ${value.name}`}
             className="text-gray-400 hover:text-red-500 font-bold p-1"
             title="Remover"
           >
@@ -99,6 +104,11 @@ export function StudentSelect({ label, value, onChange, icon }) {
         <div className="relative">
           <input
             type="text"
+            id={inputId}
+            autoComplete="off"
+            role="combobox"
+            aria-expanded={isOpen && query.length >= 2}
+            aria-autocomplete="list"
             className="w-full px-3 py-2 pl-9 border border-gray-300 rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-[#0A3D2A] focus:border-[#0A3D2A] placeholder-gray-400"
             placeholder="Buscar aluno por nome ou e-mail..."
             value={query}
@@ -121,16 +131,18 @@ export function StudentSelect({ label, value, onChange, icon }) {
                 <div className="p-3 text-[13px] text-gray-500 text-center">
                   Buscando...
                 </div>
-              ) : results.length > 0 ? (
+              ) : searchError ? <div className="p-3 text-[13px] text-red-700">Não foi possível buscar alunos. Tente novamente.</div> : results.length > 0 ? (
                 results.map((student) => (
-                  <div
+                  <button
+                    type="button"
                     key={student.id}
                     onClick={() => handleSelect(student)}
+                    disabled={student.occupied}
                     className={`px-3 py-2 border-b border-gray-50 last:border-0 flex justify-between items-center ${
                       student.occupied
                         ? 'bg-gray-50 opacity-60 cursor-not-allowed'
                         : 'hover:bg-green-50 cursor-pointer'
-                    }`}
+                    } w-full text-left`}
                   >
                     <div className="flex flex-col">
                       <span className="text-[13px] font-medium text-gray-900">
@@ -147,7 +159,7 @@ export function StudentSelect({ label, value, onChange, icon }) {
                         Em outro grupo
                       </span>
                     )}
-                  </div>
+                  </button>
                 ))
               ) : (
                 <div className="p-3 text-[13px] text-gray-500 text-center">

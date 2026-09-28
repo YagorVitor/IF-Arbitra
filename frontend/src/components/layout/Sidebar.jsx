@@ -1,64 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, ListOrdered, FileCheck2, ScrollText } from 'lucide-react';
+import { House, UsersRound, ListOrdered, ClipboardCheck, CalendarDays, UserRoundPlus, ScrollText, LayoutDashboard } from 'lucide-react';
 import { roundService } from '../../services/roundService';
 import { useAuth } from '../../contexts/AuthContext';
 
-const baseMenuItems = [
-  { path: '/aluno', icon: Home, label: 'Início', exact: true },
-  { path: '/aluno/sexteto', icon: Users, label: 'Meu sexteto', exact: false },
-  { path: '/aluno/preferencias', icon: ListOrdered, label: 'Preferências', exact: false },
-  { path: '/aluno/resultado', icon: FileCheck2, label: 'Resultado', exact: false },
+const studentItems = [
+  { path: '/aluno', icon: House, label: 'Início', exact: true },
+  { path: '/aluno/sexteto', icon: UsersRound, label: 'Meu sexteto' },
+  { path: '/aluno/preferencias', icon: ListOrdered, label: 'Preferências' },
+  { path: '/aluno/resultado', icon: ClipboardCheck, label: 'Resultado' },
+];
+const adminItems = [
+  { path: '/admin', icon: LayoutDashboard, label: 'Visão geral', exact: true },
+  { path: '/admin/rodadas', icon: CalendarDays, label: 'Rodadas' },
+  { path: '/admin/cadastros', icon: UserRoundPlus, label: 'Cadastros' },
+  { path: '/admin/auditoria', icon: ScrollText, label: 'Auditoria' },
 ];
 
 export function Sidebar() {
   const { user } = useAuth();
   const [roundId, setRoundId] = useState(null);
-
-  // Consulta a rodada e acopla o UUID nas rotas laterais dinamicamente
   useEffect(() => {
     if (user?.role === 'ADMIN') return;
-    let isMounted = true;
-    roundService.getActiveRound()
-      .then(round => {
-        if (isMounted && round) setRoundId(round.id);
-      })
-      .catch(console.error);
-    return () => { isMounted = false; };
+    let active = true;
+    roundService.getCurrentRound().then((round) => { if (active) setRoundId(round?.id || null); }).catch(() => {});
+    return () => { active = false; };
   }, [user?.role]);
-
-  const menuItems = user?.role === 'ADMIN'
-    ? [
-      { path: '/admin', icon: Home, label: 'Rodadas', exact: true },
-      { path: '/admin/cadastros', icon: Users, label: 'Cadastros e credenciais', exact: true },
-      { path: '/admin/auditoria', icon: ScrollText, label: 'Auditoria', exact: true },
-    ]
-    : baseMenuItems;
-
-  return (
-    <aside className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col shrink-0 min-h-[calc(100vh-3.5rem)]">
-      <nav className="p-3 flex flex-col gap-1">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const targetPath = (item.exact || !roundId) ? item.path : `${item.path}/${roundId}`;
-
-          return (
-            <NavLink
-              key={item.label}
-              to={targetPath}
-              end={item.exact}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-colors ${
-                  isActive ? 'bg-gray-200 text-gray-900' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`
-              }
-            >
-              <Icon size={16} strokeWidth={2.5} />
-              {item.label}
-            </NavLink>
-          );
-        })}
-      </nav>
-    </aside>
-  );
+  const isAdmin = user?.role === 'ADMIN';
+  const items = isAdmin ? adminItems : studentItems;
+  const links = items.map((item) => {
+    const Icon = item.icon;
+    const path = !isAdmin && !item.exact && roundId ? `${item.path}/${roundId}` : item.path;
+    return <NavLink key={item.path} to={path} end={item.exact} className={({ isActive }) => `app-nav-link${isActive ? ' is-active' : ''}`}><Icon size={18} strokeWidth={2} aria-hidden="true"/><span>{item.label}</span></NavLink>;
+  });
+  return <>
+    <aside className="app-sidebar"><div className="app-sidebar-heading">{isAdmin ? 'ADMINISTRAÇÃO' : 'ÁREA DO ALUNO'}</div><nav aria-label="Navegação principal">{links}</nav><div className="app-sidebar-note"><span className="app-note-mark">✦</span><strong>Uma escolha mais justa.</strong><p>Cada etapa fica registrada para que o processo seja claro do início ao fim.</p></div></aside>
+    <nav className="app-bottom-nav" aria-label="Navegação principal no celular">{links}</nav>
+  </>;
 }

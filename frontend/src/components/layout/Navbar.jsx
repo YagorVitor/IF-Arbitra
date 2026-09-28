@@ -1,23 +1,22 @@
 import { useState, useEffect } from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { roundService } from '../../services/roundService';
 import logo from '../../assets/ifsp.png';
-import bgImage from '../../assets/images/campus-colored-gradient.jpg';
 
 export function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [roundName, setRoundName] = useState('Carregando...');
+  const [roundName, setRoundName] = useState('IF-Arbitra');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
     roundService.getCurrentRound()
-      .then((round) => { if (isMounted) setRoundName(round ? round.name : 'Sem rodada disponível'); })
-      .catch(() => { if (isMounted) setRoundName('Sistema IF-Arbitra'); });
-    return () => { isMounted = false; };
+      .then((round) => { if (active) setRoundName(round?.name || 'Sem rodada disponível'); })
+      .catch(() => { if (active) setRoundName('IF-Arbitra'); });
+    return () => { active = false; };
   }, []);
 
   const handleLogout = async () => {
@@ -25,19 +24,21 @@ export function Navbar() {
     setIsLoggingOut(true);
     try { await logout(); } finally { navigate('/auth', { replace: true }); setIsLoggingOut(false); }
   };
-
   const userName = user?.name || 'Usuário';
-  const userIdentifier = user?.login || '---';
-  const initials = userName.split(' ').map((name) => name[0]).join('').substring(0, 2).toUpperCase();
+  const initials = userName.split(' ').slice(0, 2).map((name) => name[0]).join('').toUpperCase();
 
   return (
-    <header className="bg-[#0A3D2A] text-white h-14 px-4 flex items-center justify-between shrink-0" style={{ backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-      <div className="flex items-center gap-3"><img src={logo} alt="Logo IF-Arbitra" className="h-8" /><span className="font-bold text-[15px] tracking-wide">IF-Arbitra</span></div>
-      <div className="text-[13px] font-medium text-green-50/90 hidden sm:block">{roundName}</div>
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-white text-[#0A3D2A] flex items-center justify-center text-[12px] font-bold">{initials}</div>
-        <div className="flex flex-col text-right hidden sm:flex"><span className="text-[13px] font-medium leading-none">{userName}</span><span className="text-[11px] text-green-200/80 mt-1">{userIdentifier}</span></div>
-        <button type="button" onClick={handleLogout} disabled={isLoggingOut} className="p-2 rounded-md text-green-50 hover:bg-white/10 disabled:opacity-50" title="Sair" aria-label="Sair"><LogOut size={17} /></button>
+    <header className="app-topbar">
+      <a className="skip-link" href="#conteudo">Ir para o conteúdo</a>
+      <div className="app-brand" aria-label="IF-Arbitra, Instituto Federal">
+        <img src={logo} alt="" /><div><strong>IF-Arbitra</strong><span>Instituto Federal</span></div>
+      </div>
+      <div className="app-topbar-center"><span className="app-topbar-eyebrow">Sistema de alocação de sextetos</span><span>{roundName}</span></div>
+      <div className="app-account">
+        <Bell size={17} className="app-bell" aria-hidden="true" />
+        <span className="app-avatar" aria-hidden="true">{initials}</span>
+        <div className="app-account-name"><strong>{userName}</strong><span>{user?.role === 'ADMIN' ? 'Administrador' : 'Aluno'}</span></div>
+        <button type="button" onClick={handleLogout} disabled={isLoggingOut} className="app-logout" title="Sair" aria-label="Sair"><LogOut size={18} /></button>
       </div>
     </header>
   );

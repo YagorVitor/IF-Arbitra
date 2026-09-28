@@ -112,12 +112,12 @@ export default function AdminRodadas() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      <div><h1 className="text-2xl font-bold">Rodadas</h1><p className="text-sm text-gray-600 mt-1">Prazos e ações são validados pelo servidor. Uma rodada aberta tem prazos e servidores fixos.</p></div>
+    <div className="app-page">
+      <div className="app-page-head"><div><p className="app-eyebrow">Administração · operação</p><h1 className="app-title">Rodadas</h1><p className="app-subtitle">Prazos e ações são validados pelo servidor. Uma rodada aberta tem prazos e servidores fixos.</p></div><span className="app-pill neutral">{rounds.length} rodadas</span></div>
       {error && <div role="alert" className="p-3 rounded bg-red-50 text-red-800 border border-red-200">{error}</div>}
       {notice && <div role="status" className="p-3 rounded bg-green-50 text-green-800 border border-green-200">{notice}</div>}
-      <section className="border rounded-lg p-5 space-y-4">
-        <h2 className="text-lg font-semibold">{editingId ? 'Editar rascunho' : 'Criar rodada'}</h2>
+      <section className="app-card app-card-pad space-y-4">
+        <div className="app-section-head"><div><h2>{editingId ? 'Editar rascunho' : 'Criar rodada'}</h2><p>Defina a janela dos grupos, a janela de preferências e os servidores elegíveis.</p></div></div>
         <form onSubmit={saveRound} className="space-y-4">
           <label className="block text-sm">Nome da rodada<input required minLength={2} maxLength={160} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1 block w-full border rounded px-3 py-2" /></label>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -133,28 +133,28 @@ export default function AdminRodadas() {
               {staff.map((person) => <label key={person.id} className="text-sm flex items-center gap-2"><input type="checkbox" checked={form.staff_ids.includes(person.id)} onChange={() => toggleStaff(person.id)} />{person.name}</label>)}
             </div>}
           </fieldset>
-          <div className="flex gap-2"><button disabled={busy || staff.length === 0} className="bg-[#0A3D2A] text-white px-4 py-2 rounded disabled:opacity-50">{editingId ? 'Salvar rascunho' : 'Criar rascunho'}</button>
-            {editingId && <button type="button" onClick={() => { setEditingId(null); setForm(emptyForm); }} className="border rounded px-4 py-2">Cancelar edição</button>}</div>
+          <div className="app-actions"><button disabled={busy || staff.length === 0} className="app-button">{editingId ? 'Salvar rascunho' : 'Criar rascunho'}</button>
+            {editingId && <button type="button" onClick={() => { setEditingId(null); setForm(emptyForm); }} className="app-button ghost">Cancelar edição</button>}</div>
         </form>
       </section>
       <section className="space-y-3"><h2 className="text-lg font-semibold">Rodadas existentes ({rounds.length})</h2>
         {loading && <p>Carregando...</p>}
         {!loading && rounds.length === 0 && <p className="text-sm text-gray-600">Nenhuma rodada criada.</p>}
-        {rounds.map((round) => <article key={round.id} className="border rounded-lg p-4 space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{round.name}</h3><span className="text-sm font-medium">{round.status}</span></div>
+        {rounds.map((round) => <article key={round.id} className="app-card app-card-pad space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold text-lg">{round.name}</h3><span className={`app-pill ${round.status === 'OPEN' ? '' : 'neutral'}`}>{({DRAFT:'Rascunho',OPEN:'Aberta',PROCESSED:'Processada',PUBLISHED:'Publicada',ARCHIVED:'Arquivada'})[round.status] || round.status}</span></div>
           <p className="text-sm text-gray-600">Grupos: {round.registered} · Preferências: {round.with_preferences} · Servidores: {round.capacity} · Sem capacidade: {round.shortfall}</p>
           <p className="text-xs text-gray-600">Grupos: {displayDate(round.registration_opens_at)} a {displayDate(round.registration_closes_at)} · Preferências: {displayDate(round.preferences_open_at)} a {displayDate(round.preferences_close_at)}</p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {round.status === 'DRAFT' && <><button disabled={busy} onClick={() => startEdit(round)} className="border px-3 py-1 rounded text-sm">Editar</button><button disabled={busy} onClick={() => transition(round, 'open')} className="border px-3 py-1 rounded text-sm">Abrir</button></>}
-            {round.status === 'OPEN' && <button disabled={busy || !round.can_process} onClick={() => allocate(round)} className="border px-3 py-1 rounded text-sm disabled:opacity-50">Processar alocação</button>}
-            {round.status === 'PROCESSED' && <button disabled={busy} onClick={() => transition(round, 'publish')} className="border px-3 py-1 rounded text-sm">Publicar resultados</button>}
-            {round.status === 'PUBLISHED' && <button disabled={busy} onClick={() => transition(round, 'archive')} className="border px-3 py-1 rounded text-sm">Arquivar</button>}
-            <button disabled={busy} onClick={() => inspect(round)} className="border px-3 py-1 rounded text-sm">Ver grupos e resultados</button>
+          <div className="app-actions pt-1">
+            {round.status === 'DRAFT' && <><button disabled={busy} onClick={() => startEdit(round)} className="app-button secondary">Editar</button><button disabled={busy} onClick={() => transition(round, 'open')} className="app-button">Abrir</button></>}
+            {round.status === 'OPEN' && <button disabled={busy || !round.can_process} onClick={() => allocate(round)} className="app-button">Processar alocação</button>}
+            {round.status === 'PROCESSED' && <button disabled={busy} onClick={() => transition(round, 'publish')} className="app-button">Publicar resultados</button>}
+            {round.status === 'PUBLISHED' && <button disabled={busy} onClick={() => transition(round, 'archive')} className="app-button secondary">Arquivar</button>}
+            <button disabled={busy} onClick={() => inspect(round)} className="app-button ghost">Ver grupos e resultados</button>
           </div>
           {round.status === 'OPEN' && !round.can_process && <p className="text-xs text-amber-800">O processamento ficará disponível após o encerramento das preferências.</p>}
         </article>)}
       </section>
-      {selectedId && <section className="border rounded-lg p-5 space-y-3">
+      {selectedId && <section className="app-card app-card-pad space-y-3">
         <h2 className="text-lg font-semibold">Detalhes da rodada</h2>
         {sextets && <div><h3 className="font-medium">Grupos ({sextets.length})</h3><ol className="list-decimal pl-5 text-sm">{sextets.map((group) => <li key={group.id}>{group.name} · {group.member_count} integrantes · prioridade #{group.priority_sequence}</li>)}</ol></div>}
         {results && <div><h3 className="font-medium">Alocações ({results.allocations.length})</h3><p className="text-xs text-gray-600">{results.published ? 'Publicadas' : 'Ainda não publicadas aos alunos'}</p><ol className="list-decimal pl-5 text-sm">{results.allocations.map((item) => <li key={item.id}>{item.sextet_name}: {item.staff_name || 'Sem servidor'} ({item.kind === 'REPECHAGE' ? 'repescagem' : 'ranking'})</li>)}</ol></div>}

@@ -14,6 +14,7 @@ import ResultadoAluno from "../pages/aluno/ResultadoAluno";
 import AdminCadastros from '../pages/admin/AdminCadastros';
 import AdminRodadas from '../pages/admin/AdminRodadas';
 import AdminAuditoria from '../pages/admin/AdminAuditoria';
+import AdminOverview from '../pages/admin/AdminOverview';
 
 export const router = createBrowserRouter([
     {
@@ -76,7 +77,8 @@ export const router = createBrowserRouter([
                 path: '/admin',
                 element: <DashboardLayout/>,
                 children: [
-                    { index: true, element: <AdminRodadas/> },
+                    { index: true, element: <AdminOverview/> },
+                    { path: 'rodadas', element: <AdminRodadas/> },
                     { path: 'cadastros', element: <AdminCadastros/> },
                     { path: 'auditoria', element: <AdminAuditoria/> },
                 ],

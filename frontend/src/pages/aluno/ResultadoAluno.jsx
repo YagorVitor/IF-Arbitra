@@ -18,19 +18,19 @@ export default function ResultadoAluno() {
     getStaffName
   } = useResultsManager(paramRoundId);
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Carregando resultados...</div>;
+  if (loading) return <div className="app-card app-card-pad" role="status">Carregando resultados...</div>;
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="app-page">
         <Alert variant="error">{error}</Alert>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Resultado da rodada</h1>
+    <div className="app-page">
+      <div className="app-page-head"><div><p className="app-eyebrow">Resultado · {round?.name}</p><h1 className="app-title">Resultado da rodada</h1><p className="app-subtitle">Acompanhe a alocação do seu sexteto e a ordem processada.</p></div>{isPublished && <span className="app-pill">Publicado</span>}</div>
 
       {!isPublished ? (
         <ResultUnpublished roundName={round?.name} />
