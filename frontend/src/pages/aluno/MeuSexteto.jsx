@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSextetManager } from '../../hooks/useSextetManager';
 import SextetForm from '../../components/ui/SextetForm';
 import SextetReadOnly from '../../components/ui/SextetReadOnly';
+import EmptyRoundState from '../../components/ui/EmptyRoundState';
 
 export default function MeuSexteto() {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ export default function MeuSexteto() {
   const { round, existingSextet, isOccupiedGlobally, isLoading, isSubmitting, error, setError, submitSextet } = useSextetManager(currentUser, roundId);
 
   if (isLoading) return <div className="app-card app-card-pad" role="status">Carregando informações...</div>;
+  if (!round && !error) return <EmptyRoundState section="sexteto" />;
+  if (!round && error) return <div className="app-error app-card" role="alert"><AlertCircle size={22}/><div><strong>Não foi possível consultar o sexteto</strong><p>{error}</p><button type="button" className="app-button secondary" onClick={() => navigate('/aluno')}>Voltar ao início</button></div></div>;
 
   if (isOccupiedGlobally && !existingSextet) return (
     <div className="max-w-3xl mx-auto py-16 flex flex-col items-center text-center">

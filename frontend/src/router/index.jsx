@@ -5,16 +5,9 @@ import ProtectedRoute from './ProtectedRoute';
 import AuthLayout from '../layouts/AuthLayout';
 import DashboardLayout from "../layouts/DashboardLayout";
 
-// Pages
 import Login from "../pages/Auth/Login";
-import HomeAluno from "../pages/aluno/HomeAluno";
-import MeuSexteto from "../pages/aluno/MeuSexteto";
-import Preferencias from "../pages/aluno/Preferencias";
-import ResultadoAluno from "../pages/aluno/ResultadoAluno";
-import AdminCadastros from '../pages/admin/AdminCadastros';
-import AdminRodadas from '../pages/admin/AdminRodadas';
-import AdminAuditoria from '../pages/admin/AdminAuditoria';
-import AdminOverview from '../pages/admin/AdminOverview';
+
+const page = (loader) => async () => ({ Component: (await loader()).default });
 
 export const router = createBrowserRouter([
     {
@@ -40,31 +33,31 @@ export const router = createBrowserRouter([
                 children: [
                     {
                         index: true,
-                        element: <HomeAluno/>,
+                        lazy: page(() => import('../pages/aluno/HomeAluno')),
                     },
                     {
                         path: '/aluno/sexteto',
-                        element: <MeuSexteto/>
+                        lazy: page(() => import('../pages/aluno/MeuSexteto'))
                     },
                     {
                         path: '/aluno/sexteto/:roundId',
-                        element: <MeuSexteto/>
+                        lazy: page(() => import('../pages/aluno/MeuSexteto'))
                     },
                     {
                         path: '/aluno/preferencias',
-                        element: <Preferencias/>
+                        lazy: page(() => import('../pages/aluno/Preferencias'))
                     },
                     {
                         path: '/aluno/preferencias/:roundId',
-                        element: <Preferencias/>
+                        lazy: page(() => import('../pages/aluno/Preferencias'))
                     },
                     {
                         path: '/aluno/resultado',
-                        element: <ResultadoAluno/>
+                        lazy: page(() => import('../pages/aluno/ResultadoAluno'))
                     },
                     {
                         path: '/aluno/resultado/:roundId',
-                        element: <ResultadoAluno/>
+                        lazy: page(() => import('../pages/aluno/ResultadoAluno'))
                     }
                 ]
             }
@@ -77,10 +70,10 @@ export const router = createBrowserRouter([
                 path: '/admin',
                 element: <DashboardLayout/>,
                 children: [
-                    { index: true, element: <AdminOverview/> },
-                    { path: 'rodadas', element: <AdminRodadas/> },
-                    { path: 'cadastros', element: <AdminCadastros/> },
-                    { path: 'auditoria', element: <AdminAuditoria/> },
+                    { index: true, lazy: page(() => import('../pages/admin/AdminOverview')) },
+                    { path: 'rodadas', lazy: page(() => import('../pages/admin/AdminRodadas')) },
+                    { path: 'cadastros', lazy: page(() => import('../pages/admin/AdminCadastros')) },
+                    { path: 'auditoria', lazy: page(() => import('../pages/admin/AdminAuditoria')) },
                 ],
             },
         ],

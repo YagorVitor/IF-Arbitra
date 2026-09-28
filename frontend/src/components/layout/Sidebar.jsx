@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { House, UsersRound, ListOrdered, ClipboardCheck, CalendarDays, UserRoundPlus, ScrollText, LayoutDashboard } from 'lucide-react';
+import { House, UsersRound, ListOrdered, ClipboardCheck, CalendarDays, UserRoundPlus, ScrollText, LayoutDashboard, Clock3 } from 'lucide-react';
 import { roundService } from '../../services/roundService';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -34,7 +34,7 @@ export function Sidebar() {
     return <NavLink key={item.path} to={path} end={item.exact} className={({ isActive }) => `app-nav-link${isActive ? ' is-active' : ''}`}><Icon size={18} strokeWidth={2} aria-hidden="true"/><span>{item.label}</span></NavLink>;
   });
   return <>
-    <aside className="app-sidebar"><div className="app-sidebar-heading">{isAdmin ? 'ADMINISTRAÇÃO' : 'ÁREA DO ALUNO'}</div><nav aria-label="Navegação principal">{links}</nav><div className="app-sidebar-note"><span className="app-note-mark">✦</span><strong>Uma escolha mais justa.</strong><p>Cada etapa fica registrada para que o processo seja claro do início ao fim.</p></div></aside>
+    <aside className="app-sidebar"><div className="app-sidebar-heading">{isAdmin ? 'ADMINISTRAÇÃO' : 'ÁREA DO ALUNO'}</div><nav aria-label="Navegação principal">{links}</nav><div className="app-sidebar-note"><Clock3 size={23} aria-hidden="true"/><strong>Prioridade temporal</strong><p>A posição do sexteto é registrada no momento da confirmação.</p></div></aside>
     <nav className="app-bottom-nav" aria-label="Navegação principal no celular">{links}</nav>
   </>;
 }

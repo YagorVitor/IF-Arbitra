@@ -13,7 +13,7 @@ export function useResultsManager(paramRoundId) {
       try {
         setLoading(true); setError(null);
         const targetRound = paramRoundId ? await roundService.getById(paramRoundId) : await roundService.getResultRound();
-        if (!targetRound) { setError('Nenhuma rodada disponível para consulta de resultados.'); return; }
+        if (!targetRound) { setRound(null); return; }
         const results = await roundService.getResults(targetRound.id);
         setRound(targetRound); setResultsData(results); setStaffList(targetRound.staff || []);
       } catch (err) { setError(err.message || 'Erro ao carregar resultados.'); }

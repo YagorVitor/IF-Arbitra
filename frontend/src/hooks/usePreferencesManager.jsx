@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { roundService } from '../services/roundService';
 import { sextetService } from '../services/sextetService';
+import { toast } from 'sonner';
 
 export function usePreferencesManager(user, paramRoundId) {
   const navigate = useNavigate();
@@ -26,9 +27,9 @@ export function usePreferencesManager(user, paramRoundId) {
       try {
         setLoading(true);
         const targetRound = paramRoundId ? await roundService.getById(paramRoundId) : await roundService.getPreferencesRound();
-        if (!targetRound) { setError('Nenhuma rodada disponível para envio de preferências.'); return; }
+        if (!targetRound) { setRound(null); return; }
         const sextetData = await roundService.getMySextet(targetRound.id);
-        if (!sextetData) { navigate('/aluno'); return; }
+        if (!sextetData) { setRound(targetRound); setSextet(null); setStaffList([]); return; }
         setRound(targetRound); setSextet(sextetData); setStaffList(formatInitialStaffList(targetRound.staff, sextetData.preferences));
       } catch (err) { setError(err.message || 'Não foi possível carregar as preferências.'); }
       finally { setLoading(false); }
@@ -46,6 +47,7 @@ export function usePreferencesManager(user, paramRoundId) {
       setSaving(true); setError(null);
       const responseData = await sextetService.updatePreferences(sextet.id, { staff_ids: staffList.map((staff) => staff.id), expected_version: sextet.preference_version });
       setSextet((prev) => ({ ...prev, preference_version: responseData.version }));
+      toast.success('Preferências salvas com sucesso.');
       navigate(`/aluno${round.id ? `?roundId=${round.id}` : ''}`);
     } catch (err) {
       if (err.code === 'PREFERENCE_VERSION_CONFLICT') setError('As preferências foram alteradas em outra aba. Recarregue a página antes de salvar.');

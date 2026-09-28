@@ -4,6 +4,7 @@ import { useResultsManager } from '../../hooks/useResultsManager';
 import Alert from '../../components/ui/Alert';
 import ResultUnpublished from '../../components/ui/ResultUnpublished';
 import ResultDetails from '../../components/ui/ResultDetails';
+import EmptyRoundState from '../../components/ui/EmptyRoundState';
 
 export default function ResultadoAluno() {
   const { roundId: paramRoundId } = useParams();
@@ -19,6 +20,7 @@ export default function ResultadoAluno() {
   } = useResultsManager(paramRoundId);
 
   if (loading) return <div className="app-card app-card-pad" role="status">Carregando resultados...</div>;
+  if (!round && !error) return <EmptyRoundState section="resultado" />;
 
   if (error) {
     return (

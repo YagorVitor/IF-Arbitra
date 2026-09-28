@@ -18,7 +18,7 @@ export function useSextetManager(currentUser, initialRoundId) {
       try {
         const openRound = await roundService.getRegistrationRound();
         if (openRound) { setRound(openRound); setRoundId(openRound.id); }
-        else { setError('Não há uma rodada aberta para confirmação de sextetos.'); setIsLoading(false); }
+        else { setRound(null); setIsLoading(false); }
       } catch (err) { setError(err.message || 'Erro ao carregar rodadas.'); setIsLoading(false); }
     }
     resolveRound();

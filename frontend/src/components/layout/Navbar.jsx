@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Bell } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { roundService } from '../../services/roundService';
@@ -35,7 +35,6 @@ export function Navbar() {
       </div>
       <div className="app-topbar-center"><span className="app-topbar-eyebrow">Sistema de alocação de sextetos</span><span>{roundName}</span></div>
       <div className="app-account">
-        <Bell size={17} className="app-bell" aria-hidden="true" />
         <span className="app-avatar" aria-hidden="true">{initials}</span>
         <div className="app-account-name"><strong>{userName}</strong><span>{user?.role === 'ADMIN' ? 'Administrador' : 'Aluno'}</span></div>
         <button type="button" onClick={handleLogout} disabled={isLoggingOut} className="app-logout" title="Sair" aria-label="Sair"><LogOut size={18} /></button>

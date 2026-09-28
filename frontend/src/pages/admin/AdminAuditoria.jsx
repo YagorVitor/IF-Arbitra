@@ -36,7 +36,7 @@ export default function AdminAuditoria() {
             <span>{event.actor_name || 'Sistema'}</span>
           </summary>
           <div className="mt-3 space-y-1 text-gray-700 break-all">
-            <p>Entidade: {event.entity_type || '—'} · {event.entity_id || '—'}</p>
+            <p>Entidade: {event.entity_type || 'Não informado'} · {event.entity_id || 'Não informado'}</p>
             <p>Código da requisição: {event.request_id}</p>
             <pre className="bg-gray-50 p-2 rounded overflow-auto whitespace-pre-wrap">{JSON.stringify({ payload: event.payload, previous_state: event.previous_state, resulting_state: event.resulting_state }, null, 2)}</pre>
           </div>
