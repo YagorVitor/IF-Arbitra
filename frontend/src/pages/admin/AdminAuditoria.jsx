@@ -1,6 +1,16 @@
 import { useEffect, useState } from 'react';
 import { adminService } from '../../services/adminService';
 
+const eventLabels = {
+  AUTH_LOGIN_SUCCESS: 'Acesso realizado', AUTH_LOGIN_FAILED: 'Falha de acesso', AUTH_LOGOUT: 'Saída da conta',
+  SEXTET_CREATION_ATTEMPT: 'Tentativa de confirmação de grupo', SEXTET_CREATED: 'Grupo confirmado',
+  PREFERENCE_SUBMISSION_ATTEMPT: 'Tentativa de envio de preferências', PREFERENCE_SUBMITTED: 'Preferências enviadas', PREFERENCE_UPDATED: 'Preferências atualizadas',
+  OPERATION_REJECTED: 'Operação recusada', ADMIN_ACTION: 'Ação administrativa',
+  ALLOCATION_STARTED: 'Alocação iniciada', ALLOCATION_GROUP_PROCESSED: 'Grupo processado', ALLOCATION_FINISHED: 'Alocação concluída', ALLOCATION_FAILED: 'Falha na alocação',
+  CREDENTIAL_DISPATCH_STARTED: 'Envio de credenciais iniciado', CREDENTIAL_DISPATCHED: 'Credenciais enviadas', CREDENTIAL_DELIVERY_FAILED: 'Falha no envio de credenciais', CREDENTIAL_DISPATCH_FINISHED: 'Envio de credenciais concluído',
+};
+const entityLabels = { SEXTET: 'Grupo', USER: 'Usuário', ALLOCATION_ROUND: 'Rodada', ALLOCATION_RUN: 'Processamento', CREDENTIAL_DISPATCH: 'Envio de credenciais', INSTITUTIONAL_STAFF: 'Servidor' };
+
 export default function AdminAuditoria() {
   const [events, setEvents] = useState([]);
   const [cursor, setCursor] = useState(null);
@@ -31,12 +41,12 @@ export default function AdminAuditoria() {
       <div className="space-y-2">
         {events.map((event) => <details key={event.id} className="app-card app-card-pad text-sm">
           <summary className="cursor-pointer flex flex-wrap gap-x-4 gap-y-1">
-            <span className="font-medium">#{event.id} · {event.event_type}</span>
+            <span className="font-medium">#{event.id} · {eventLabels[event.event_type] || event.event_type}</span>
             <span>{new Date(event.occurred_at).toLocaleString('pt-BR')}</span>
             <span>{event.actor_name || 'Sistema'}</span>
           </summary>
           <div className="mt-3 space-y-1 text-gray-700 break-all">
-            <p>Entidade: {event.entity_type || 'Não informado'} · {event.entity_id || 'Não informado'}</p>
+            <p>Entidade: {entityLabels[event.entity_type] || event.entity_type || 'Não informado'} · {event.entity_id || 'Não informado'}</p>
             <p>Código da requisição: {event.request_id}</p>
             <pre className="bg-gray-50 p-2 rounded overflow-auto whitespace-pre-wrap">{JSON.stringify({ payload: event.payload, previous_state: event.previous_state, resulting_state: event.resulting_state }, null, 2)}</pre>
           </div>

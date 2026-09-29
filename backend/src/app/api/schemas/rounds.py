@@ -10,7 +10,7 @@ from app.api.schemas.staff import StaffOut
 
 class RoundInput(Input):
     name: Name
-    formation_mode: Literal["SEXTET", "TRIOS"] = "TRIOS"
+    formation_mode: Literal["TRIOS"] = "TRIOS"
     registration_opens_at: AwareDatetime
     registration_closes_at: AwareDatetime
     preferences_open_at: AwareDatetime

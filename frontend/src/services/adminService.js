@@ -14,6 +14,6 @@ export const adminService = {
   transitionRound: (id, action) => api.post(`/api/admin/rounds/${id}/transition`, { action }),
   allocate: (id) => api.post(`/api/admin/rounds/${id}/allocate`),
   results: (id) => api.get(`/api/rounds/${id}/results`),
-  sextets: (id) => api.get(`/api/admin/rounds/${id}/sextets`),
+  groups: (id) => api.get(`/api/admin/rounds/${id}/sextets`),
   audit: (beforeId) => api.get(`/api/admin/audit${beforeId ? `?before_id=${beforeId}` : ''}`),
 };

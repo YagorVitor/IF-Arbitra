@@ -34,7 +34,7 @@ export default function ResultadoAluno() {
 
   return (
     <div className="app-page">
-      <div className="app-page-head"><div><p className="app-eyebrow">Resultado · {round?.name}</p><h1 className="app-title">Resultado da rodada</h1><p className="app-subtitle">Acompanhe a alocação do seu {trioMode ? 'trio' : 'sexteto'} e a ordem processada.</p></div>{isPublished && <span className="app-pill">Publicado</span>}</div>
+      <div className="app-page-head"><div><p className="app-eyebrow">Resultado · {round?.name}</p><h1 className="app-title">Resultado da rodada</h1><p className="app-subtitle">Acompanhe a alocação do seu {trioMode ? 'trio' : 'grupo registrado'} e a ordem processada.</p></div>{isPublished && <span className="app-pill">Publicado</span>}</div>
 
       {!isPublished ? (
         <ResultUnpublished roundName={round?.name} />

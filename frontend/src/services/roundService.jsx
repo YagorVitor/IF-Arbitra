@@ -19,7 +19,7 @@ export const roundService = {
 
   async getRegistrationRound() {
     const rounds = await this.getAllOrdered();
-    return rounds.find((round) => round.registration_open) || null;
+    return rounds.find((round) => round.formation_mode === 'TRIOS' && round.registration_open) || null;
   },
 
   async getPreferencesRound() {
@@ -41,12 +41,12 @@ export const roundService = {
       || null;
   },
 
-  // Mantido como alias para componentes existentes; não retorna rodada fora de uma janela aberta.
+  // Usa a rodada atual também para consulta após o encerramento das inscrições.
   getActiveRound() {
     return this.getCurrentRound();
   },
 
-  getMySextet: (roundId) => api.get(`/api/rounds/${roundId}/my-sextet`),
+  getMyGroup: (roundId) => api.get(`/api/rounds/${roundId}/my-sextet`),
   getResults: (roundId) => api.get(`/api/rounds/${roundId}/results`),
-  createSextet: (roundId, payload) => api.post(`/api/rounds/${roundId}/sextets`, payload),
+  createTrio: (roundId, payload) => api.post(`/api/rounds/${roundId}/sextets`, payload),
 };

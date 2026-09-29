@@ -1,26 +1,26 @@
 import { CheckCircle2, AlertCircle, Lock, Clock } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { useSextetManager } from '../../hooks/useSextetManager';
-import SextetForm from '../../components/ui/SextetForm';
-import SextetReadOnly from '../../components/ui/SextetReadOnly';
+import { useTrioManager } from '../../hooks/useTrioManager';
+import TrioForm from '../../components/ui/TrioForm';
+import TrioReadOnly from '../../components/ui/TrioReadOnly';
 import EmptyRoundState from '../../components/ui/EmptyRoundState';
 
-export default function MeuSexteto() {
+export default function MeuTrio() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { roundId } = useParams();
   const currentUser = { id: user?.id, name: user?.name || 'A carregar...', login: user?.login || '' };
-  const { round, existingSextet, isOccupiedGlobally, isLoading, isSubmitting, error, setError, submitSextet } = useSextetManager(currentUser, roundId);
+  const { round, existingGroup, isOccupiedGlobally, isLoading, isSubmitting, error, setError, submitTrio } = useTrioManager(currentUser, roundId);
 
   if (isLoading) return <div className="app-card app-card-pad" role="status">Carregando informações...</div>;
-  if (!round && !error) return <EmptyRoundState section="sexteto" />;
+  if (!round && !error) return <EmptyRoundState section="trio" />;
   if (!round && error) return <div className="app-error app-card" role="alert"><AlertCircle size={22}/><div><strong>Não foi possível consultar o grupo</strong><p>{error}</p><button type="button" className="app-button secondary" onClick={() => navigate('/aluno')}>Voltar ao início</button></div></div>;
 
   const trioMode = round?.formation_mode === 'TRIOS';
-  const groupName = trioMode ? 'trio' : 'sexteto';
+  const groupName = trioMode ? 'trio' : 'grupo registrado';
 
-  if (isOccupiedGlobally && !existingSextet) return (
+  if (isOccupiedGlobally && !existingGroup) return (
     <div className="max-w-3xl mx-auto py-16 flex flex-col items-center text-center">
       <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-4"><Lock size={32} /></div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Formulário bloqueado</h2>
@@ -29,25 +29,25 @@ export default function MeuSexteto() {
     </div>
   );
 
-  const isReadOnly = !!existingSextet;
-  const canRegister = round?.registration_open === true;
+  const isReadOnly = !!existingGroup;
+  const canRegister = trioMode && round?.registration_open === true;
 
   return (
     <div className="app-page">
       <div className="app-page-head">
         <div>
           <p className="app-eyebrow">{round?.name || 'Formação de grupos'}</p><h1 className="app-title">{isReadOnly ? `Meu ${groupName}` : `Formar ${groupName}`}</h1>
-          <p className="app-subtitle">{isReadOnly ? `Prioridade registrada na rodada: #${String(existingSextet.priority_sequence || 0).padStart(2, '0')}` : trioMode ? 'Escolha mais dois alunos para formar seu trio. O sistema reunirá dois trios por servidor.' : 'Escolha de 3 a 6 alunos, incluindo você.'}</p>
+          <p className="app-subtitle">{isReadOnly ? `Prioridade registrada na rodada: #${String(existingGroup.priority_sequence || 0).padStart(2, '0')}` : 'Escolha mais dois alunos para formar seu trio. O sistema reunirá dois trios por servidor.'}</p>
         </div>
         {isReadOnly && <div className="app-pill"><CheckCircle2 size={14}/>Confirmado</div>}
       </div>
 
-      {error && <div className="mb-6 bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 flex items-center gap-3 text-sm"><AlertCircle className="shrink-0 text-red-600" size={20} /><span>{error}</span></div>}
+      {error && <div role="alert" className="mb-6 bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 flex items-center gap-3 text-sm"><AlertCircle className="shrink-0 text-red-600" size={20} /><span>{error}</span></div>}
 
-      {isReadOnly ? <SextetReadOnly existingSextet={existingSextet} trioMode={trioMode} /> : canRegister ? (
-        <SextetForm currentUser={currentUser} onSubmit={submitSextet} isSubmitting={isSubmitting} error={error} setError={setError} trioMode={trioMode} />
+      {isReadOnly ? <TrioReadOnly existingGroup={existingGroup} trioMode={trioMode} /> : canRegister ? (
+        <TrioForm currentUser={currentUser} onSubmit={submitTrio} isSubmitting={isSubmitting} setError={setError} />
       ) : (
-        <div className="max-w-3xl bg-amber-50 border border-amber-200 rounded-lg p-6 flex items-start gap-3 text-amber-900"><Clock className="shrink-0 mt-0.5" size={22} /><div><h2 className="font-bold">Confirmação indisponível</h2><p className="text-sm mt-1">A janela oficial de confirmação desta rodada não está aberta. O backend continuará sendo a autoridade sobre o prazo.</p></div></div>
+        <div className="max-w-3xl bg-amber-50 border border-amber-200 rounded-lg p-6 flex items-start gap-3 text-amber-900"><Clock className="shrink-0 mt-0.5" size={22} /><div><h2 className="font-bold">Confirmação indisponível</h2><p className="text-sm mt-1">{trioMode ? 'A confirmação ficará disponível durante o período de inscrições da rodada.' : 'Esta rodada está disponível para consulta. Aguarde a administração abrir uma nova rodada para confirmar seu trio.'}</p></div></div>
       )}
     </div>
   );

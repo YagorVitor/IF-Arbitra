@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const studentItems = [
   { path: '/aluno', icon: House, label: 'Início', exact: true },
-  { path: '/aluno/sexteto', icon: UsersRound, label: 'Meu grupo' },
+  { path: '/aluno/trio', icon: UsersRound, label: 'Meu trio' },
   { path: '/aluno/preferencias', icon: ListOrdered, label: 'Preferências' },
   { path: '/aluno/resultado', icon: ClipboardCheck, label: 'Resultado' },
 ];

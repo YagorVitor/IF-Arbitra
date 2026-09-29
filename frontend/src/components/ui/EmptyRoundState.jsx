@@ -31,7 +31,7 @@ function HowItWorksDialog() {
 
 export default function EmptyRoundState({ section = 'home' }) {
   if (section !== 'home') {
-    const sections = { sexteto: ['Meu grupo', 'seu grupo'], preferencias: ['Preferências', 'as preferências'], resultado: ['Resultado', 'o resultado'] };
+    const sections = { trio: ['Meu trio', 'seu trio'], preferencias: ['Preferências', 'as preferências'], resultado: ['Resultado', 'o resultado'] };
     const [title, subject] = sections[section] || ['Etapa', 'esta etapa'];
     return <div className="app-page"><div className="app-page-head"><div><p className="app-eyebrow">ÁREA DO ALUNO</p><h1 className="app-title">{title}</h1></div></div><section className="app-empty-compact app-card"><span className="app-empty-compact-icon"><CalendarClock size={27} /></span><span className="app-kicker">SEM RODADA ABERTA</span><h2>Ainda não há uma rodada para consultar {subject}.</h2><p>Quando a administração abrir o processo, esta área mostrará as informações e ações disponíveis.</p><Link className="app-button" to="/aluno">Voltar ao início <ArrowRight size={16} /></Link></section></div>;
   }

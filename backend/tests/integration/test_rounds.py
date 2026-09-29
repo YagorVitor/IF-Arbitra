@@ -83,7 +83,7 @@ def test_archiving_releases_members_and_run_evidence_is_immutable(world, client,
         f"/api/rounds/{new['id']}/sextets",
         json={
             "name": "Novo grupo",
-            "members": [str(u.id) for u in world.users[:6]],
+            "members": [str(u.id) for u in world.users[:3]],
             "idempotency_key": str(uuid4()),
         },
     )

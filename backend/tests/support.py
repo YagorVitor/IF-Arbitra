@@ -46,7 +46,7 @@ def prepare_groups(world, client):
 def draft_payload(world):
     return {
         "name": "Rodada nova",
-        "formation_mode": "SEXTET",
+        "formation_mode": "TRIOS",
         "registration_opens_at": (world.now - timedelta(hours=1)).isoformat(),
         "registration_closes_at": (world.now + timedelta(hours=1)).isoformat(),
         "preferences_open_at": world.now.isoformat(),

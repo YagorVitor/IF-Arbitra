@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import ProtectedRoute from './ProtectedRoute';
+import PreviousGroupRoute from '../components/layout/PreviousGroupRoute';
 
 // Layouts
 import AuthLayout from '../layouts/AuthLayout';
@@ -36,12 +37,20 @@ export const router = createBrowserRouter([
                         lazy: page(() => import('../pages/aluno/HomeAluno')),
                     },
                     {
+                        path: '/aluno/trio',
+                        lazy: page(() => import('../pages/aluno/MeuTrio'))
+                    },
+                    {
+                        path: '/aluno/trio/:roundId',
+                        lazy: page(() => import('../pages/aluno/MeuTrio'))
+                    },
+                    {
                         path: '/aluno/sexteto',
-                        lazy: page(() => import('../pages/aluno/MeuSexteto'))
+                        element: <PreviousGroupRoute />
                     },
                     {
                         path: '/aluno/sexteto/:roundId',
-                        lazy: page(() => import('../pages/aluno/MeuSexteto'))
+                        element: <PreviousGroupRoute />
                     },
                     {
                         path: '/aluno/preferencias',

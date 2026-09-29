@@ -23,7 +23,7 @@ export default function AdminRodadas() {
   const [editingId, setEditingId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [results, setResults] = useState(null);
-  const [sextets, setSextets] = useState(null);
+  const [groups, setGroups] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -63,7 +63,7 @@ export default function AdminRodadas() {
     setEditingId(round.id);
     setForm({
       name: round.name,
-      formation_mode: round.formation_mode,
+      formation_mode: 'TRIOS',
       registration_opens_at: localInput(round.registration_opens_at),
       registration_closes_at: localInput(round.registration_closes_at),
       preferences_open_at: localInput(round.preferences_open_at),
@@ -106,8 +106,8 @@ export default function AdminRodadas() {
   async function inspect(round) {
     setBusy(true); setError(''); setSelectedId(round.id);
     try {
-      const [resultRows, sextetRows] = await Promise.all([adminService.results(round.id), adminService.sextets(round.id)]);
-      setResults(resultRows); setSextets(sextetRows);
+      const [resultRows, groupRows] = await Promise.all([adminService.results(round.id), adminService.groups(round.id)]);
+      setResults(resultRows); setGroups(groupRows);
     } catch (err) { setError(err.message || 'Não foi possível carregar os detalhes.'); }
     finally { setBusy(false); }
   }
@@ -121,8 +121,7 @@ export default function AdminRodadas() {
         <div className="app-section-head"><div><h2>{editingId ? 'Editar rascunho' : 'Criar rodada'}</h2><p>Defina a janela dos grupos, a janela de preferências e os servidores elegíveis.</p></div></div>
         <form onSubmit={saveRound} className="space-y-4">
           <label className="block text-sm">Nome da rodada<input required minLength={2} maxLength={160} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1 block w-full border rounded px-3 py-2" /></label>
-          <label className="block text-sm">Formação dos grupos<select value={form.formation_mode} onChange={(e) => setForm({ ...form, formation_mode: e.target.value })} className="mt-1 block w-full border rounded px-3 py-2"><option value="TRIOS">Trios reunidos automaticamente em sextetos</option><option value="SEXTET">Sextetos formados pelos alunos (modo anterior)</option></select></label>
-          {form.formation_mode === 'TRIOS' && <p className="text-sm app-muted">Cada servidor recebe dois trios. A seleção começa pela primeira preferência e usa a ordem de confirmação para desempatar. Trios sem par ou vaga ficam pendentes.</p>}
+          <p className="text-sm app-muted">Cada servidor recebe dois trios. A seleção começa pela primeira preferência e usa a ordem de confirmação para desempatar. Trios sem par ou vaga ficam pendentes.</p>
           <div className="grid sm:grid-cols-2 gap-4">
             {[
               ['registration_opens_at', 'Início da confirmação dos grupos'],
@@ -159,7 +158,7 @@ export default function AdminRodadas() {
       </section>
       {selectedId && <section className="app-card app-card-pad space-y-3">
         <h2 className="text-lg font-semibold">Detalhes da rodada</h2>
-        {sextets && <div><h3 className="font-medium">Grupos ({sextets.length})</h3><ol className="list-decimal pl-5 text-sm">{sextets.map((group) => <li key={group.id}>{group.name} · {group.member_count} integrantes · prioridade #{group.priority_sequence}</li>)}</ol></div>}
+        {groups && <div><h3 className="font-medium">Grupos ({groups.length})</h3><ol className="list-decimal pl-5 text-sm">{groups.map((group) => <li key={group.id}>{group.name} · {group.member_count} integrantes · prioridade #{group.priority_sequence}</li>)}</ol></div>}
         {results && <div><h3 className="font-medium">Alocações ({results.allocations.length})</h3><p className="text-xs text-gray-600">{results.published ? 'Publicadas' : 'Ainda não publicadas aos alunos'}</p>{results.allocations.some((item) => item.status === 'UNALLOCATED') && <p className="mt-2 p-3 rounded bg-amber-50 text-amber-900 border border-amber-200">{results.allocations.filter((item) => item.status === 'UNALLOCATED').length} grupo(s) pendente(s). A administração fará o ajuste fora do sistema.</p>}<ol className="list-decimal pl-5 text-sm mt-3 space-y-1">{results.allocations.map((item) => <li key={item.id}>{item.sextet_name}: {item.staff_name || 'Pendente'}{item.partner_trio ? `, junto ao ${item.partner_trio.name}` : ''} ({item.kind === 'REPECHAGE' ? 'repescagem' : 'ranking'})</li>)}</ol></div>}
       </section>}
     </div>

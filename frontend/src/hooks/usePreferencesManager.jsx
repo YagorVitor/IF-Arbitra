@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { roundService } from '../services/roundService';
-import { sextetService } from '../services/sextetService';
+import { groupService } from '../services/groupService';
 import { toast } from 'sonner';
 
 export function usePreferencesManager(user, paramRoundId) {
   const navigate = useNavigate();
   const [round, setRound] = useState(null);
-  const [sextet, setSextet] = useState(null);
+  const [group, setGroup] = useState(null);
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,9 +28,9 @@ export function usePreferencesManager(user, paramRoundId) {
         setLoading(true);
         const targetRound = paramRoundId ? await roundService.getById(paramRoundId) : await roundService.getPreferencesRound();
         if (!targetRound) { setRound(null); return; }
-        const sextetData = await roundService.getMySextet(targetRound.id);
-        if (!sextetData) { setRound(targetRound); setSextet(null); setStaffList([]); return; }
-        setRound(targetRound); setSextet(sextetData); setStaffList(formatInitialStaffList(targetRound.staff, sextetData.preferences));
+        const groupData = await roundService.getMyGroup(targetRound.id);
+        if (!groupData) { setRound(targetRound); setGroup(null); setStaffList([]); return; }
+        setRound(targetRound); setGroup(groupData); setStaffList(formatInitialStaffList(targetRound.staff, groupData.preferences));
       } catch (err) { setError(err.message || 'Não foi possível carregar as preferências.'); }
       finally { setLoading(false); }
     };
@@ -39,14 +39,14 @@ export function usePreferencesManager(user, paramRoundId) {
 
   const moveUp = useCallback((index) => { if (index === 0) return; setStaffList((prev) => { const next = [...prev]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; return next; }); }, []);
   const moveDown = useCallback((index) => { setStaffList((prev) => { if (index === prev.length - 1) return prev; const next = [...prev]; [next[index + 1], next[index]] = [next[index], next[index + 1]]; return next; }); }, []);
-  const isLeader = sextet?.members?.[0]?.id === user?.id;
+  const isLeader = group?.members?.[0]?.id === user?.id;
 
   const handleSave = async () => {
-    if (!sextet || !isLeader || !round?.preferences_open) return;
+    if (!group || !isLeader || !round?.preferences_open) return;
     try {
       setSaving(true); setError(null);
-      const responseData = await sextetService.updatePreferences(sextet.id, { staff_ids: staffList.map((staff) => staff.id), expected_version: sextet.preference_version });
-      setSextet((prev) => ({ ...prev, preference_version: responseData.version }));
+      const responseData = await groupService.updatePreferences(group.id, { staff_ids: staffList.map((staff) => staff.id), expected_version: group.preference_version });
+      setGroup((prev) => ({ ...prev, preference_version: responseData.version }));
       toast.success('Preferências salvas com sucesso.');
       navigate(`/aluno${round.id ? `?roundId=${round.id}` : ''}`);
     } catch (err) {
@@ -56,5 +56,5 @@ export function usePreferencesManager(user, paramRoundId) {
     } finally { setSaving(false); }
   };
 
-  return { round, sextet, staffList, loading, saving, error, isLeader, moveUp, moveDown, handleSave };
+  return { round, group, staffList, loading, saving, error, isLeader, moveUp, moveDown, handleSave };
 }
