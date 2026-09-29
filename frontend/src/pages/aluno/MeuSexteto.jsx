@@ -15,13 +15,16 @@ export default function MeuSexteto() {
 
   if (isLoading) return <div className="app-card app-card-pad" role="status">Carregando informações...</div>;
   if (!round && !error) return <EmptyRoundState section="sexteto" />;
-  if (!round && error) return <div className="app-error app-card" role="alert"><AlertCircle size={22}/><div><strong>Não foi possível consultar o sexteto</strong><p>{error}</p><button type="button" className="app-button secondary" onClick={() => navigate('/aluno')}>Voltar ao início</button></div></div>;
+  if (!round && error) return <div className="app-error app-card" role="alert"><AlertCircle size={22}/><div><strong>Não foi possível consultar o grupo</strong><p>{error}</p><button type="button" className="app-button secondary" onClick={() => navigate('/aluno')}>Voltar ao início</button></div></div>;
+
+  const trioMode = round?.formation_mode === 'TRIOS';
+  const groupName = trioMode ? 'trio' : 'sexteto';
 
   if (isOccupiedGlobally && !existingSextet) return (
     <div className="max-w-3xl mx-auto py-16 flex flex-col items-center text-center">
       <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-4"><Lock size={32} /></div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Formulário bloqueado</h2>
-      <p className="text-gray-600 mb-8 max-w-lg">Você já está registrado em um sexteto ativo. Um aluno pode pertencer no máximo a um sexteto ativo no sistema.</p>
+      <p className="text-gray-600 mb-8 max-w-lg">Você já está registrado em um grupo ativo. Um aluno pode pertencer no máximo a um grupo ativo no sistema.</p>
       <button onClick={() => navigate('/aluno')} className="px-6 py-2 rounded-md font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">Voltar ao painel</button>
     </div>
   );
@@ -33,16 +36,16 @@ export default function MeuSexteto() {
     <div className="app-page">
       <div className="app-page-head">
         <div>
-          <p className="app-eyebrow">{round?.name || 'Formação de grupos'}</p><h1 className="app-title">{isReadOnly ? 'Meu sexteto' : 'Formar sexteto'}</h1>
-          <p className="app-subtitle">{isReadOnly ? `Prioridade registrada na rodada: #${String(existingSextet.priority_sequence || 0).padStart(2, '0')}` : 'Escolha de 3 a 6 alunos, incluindo você.'}</p>
+          <p className="app-eyebrow">{round?.name || 'Formação de grupos'}</p><h1 className="app-title">{isReadOnly ? `Meu ${groupName}` : `Formar ${groupName}`}</h1>
+          <p className="app-subtitle">{isReadOnly ? `Prioridade registrada na rodada: #${String(existingSextet.priority_sequence || 0).padStart(2, '0')}` : trioMode ? 'Escolha mais dois alunos para formar seu trio. O sistema reunirá dois trios por servidor.' : 'Escolha de 3 a 6 alunos, incluindo você.'}</p>
         </div>
         {isReadOnly && <div className="app-pill"><CheckCircle2 size={14}/>Confirmado</div>}
       </div>
 
       {error && <div className="mb-6 bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 flex items-center gap-3 text-sm"><AlertCircle className="shrink-0 text-red-600" size={20} /><span>{error}</span></div>}
 
-      {isReadOnly ? <SextetReadOnly existingSextet={existingSextet} /> : canRegister ? (
-        <SextetForm currentUser={currentUser} onSubmit={submitSextet} isSubmitting={isSubmitting} error={error} setError={setError} />
+      {isReadOnly ? <SextetReadOnly existingSextet={existingSextet} trioMode={trioMode} /> : canRegister ? (
+        <SextetForm currentUser={currentUser} onSubmit={submitSextet} isSubmitting={isSubmitting} error={error} setError={setError} trioMode={trioMode} />
       ) : (
         <div className="max-w-3xl bg-amber-50 border border-amber-200 rounded-lg p-6 flex items-start gap-3 text-amber-900"><Clock className="shrink-0 mt-0.5" size={22} /><div><h2 className="font-bold">Confirmação indisponível</h2><p className="text-sm mt-1">A janela oficial de confirmação desta rodada não está aberta. O backend continuará sendo a autoridade sobre o prazo.</p></div></div>
       )}

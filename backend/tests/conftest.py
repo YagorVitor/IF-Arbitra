@@ -45,6 +45,7 @@ def world():
         db.add_all(staff)
         r = AllocationRound(
             name="Rodada de teste",
+            formation_mode="SEXTET",
             registration_opens_at=now - timedelta(hours=1),
             registration_closes_at=now + timedelta(hours=1),
             preferences_open_at=now - timedelta(hours=1),

@@ -14,11 +14,13 @@
 
 ## Integridade e concorrência
 
-Os escritores críticos bloqueiam primeiro a rodada no PostgreSQL. O cadastro também bloqueia os alunos em ordem de UUID, permitindo concorrência entre rodadas sem inverter a ordem dos locks. O índice parcial `uq_student_active_sextet` é a barreira final contra participação dupla. Constraints diferidos exigem a quantidade declarada de três a seis integrantes e ranking completo no commit.
+Os escritores críticos bloqueiam primeiro a rodada no PostgreSQL. O cadastro também bloqueia os alunos em ordem de UUID, permitindo concorrência entre rodadas sem inverter a ordem dos locks. O índice parcial `uq_student_active_sextet` é a barreira final contra participação dupla. Constraints diferidos exigem exatamente três integrantes nas novas rodadas `TRIOS`, de três a seis nas rodadas antigas `SEXTET`, e ranking completo no commit.
 
 `clock_timestamp()` decide janelas após esperar pelos locks. Abertura é inclusiva; fechamento, exclusivo. A confirmação produz prioridade imutável e preferências não a alteram. Chaves de idempotência são vinculadas ao criador e não podem ser reutilizadas com conteúdo diferente.
 
 O cálculo inteiro, suas alocações, eventos e transição para `PROCESSED` fazem parte de uma transação. Falhas fazem rollback e uma tentativa `FAILED` é registrada separadamente. Repetições devolvem a execução oficial `COMPLETED`. A migration `0004_run_history` impede alteração e exclusão de execuções finalizadas e truncamento do histórico. A reprodução com `app.commands.verify_run` confere fingerprint, versão suportada, resultados e trilhas sem escrever no banco.
+
+A migration `0010_trio_formation` preserva o modo `SEXTET` nas rodadas existentes e define `TRIOS` para as novas. No modo `TRIOS`, a alocação produz no máximo dois registros por servidor, identificados por `staff_slot`. O algoritmo só ocupa um servidor quando encontra um par completo; trios sem par ou sem capacidade ficam pendentes. A versão do algoritmo no registro da execução mantém a reprodução das rodadas anteriores.
 
 O estado `PROCESSING` participa da mesma transação: ele não é um indicador de progresso público em tempo real. Os gatilhos e privilégios protegem a conta da aplicação; o proprietário/superusuário do banco continua sendo uma função operacional privilegiada.
 

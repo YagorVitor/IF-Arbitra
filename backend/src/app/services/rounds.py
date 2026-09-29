@@ -43,7 +43,7 @@ def assert_window(db, round_, kind):
             code,
             "O período de envio de preferências está fechado."
             if kind == "preferences"
-            else "O período de confirmação de sextetos está fechado.",
+            else "O período de confirmação de grupos está fechado.",
         )
     return now
 

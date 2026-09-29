@@ -65,7 +65,7 @@ Para regenerar o arquivo de contrato, execute `python -m app.commands.export_ope
 
 1. Fazer backup e verificar que as credenciais de migração e execução estão separadas.
 2. Instalar o código/dependências desta revisão; manter o `.env` do ambiente.
-3. Executar `alembic -c config/alembic.ini upgrade head` em `backend/`. Conferir que a versão aplicada alcançou o head distribuído (`0009_group_slots` nesta revisão).
+3. Executar `alembic -c config/alembic.ini upgrade head` em `backend/`. Conferir que a versão aplicada alcançou o head distribuído (`0010_trio_formation` nesta revisão).
 4. Executar o seed idempotente se necessário e reiniciar os workers.
 5. Conferir `/ready` e um login com o domínio real do frontend.
 

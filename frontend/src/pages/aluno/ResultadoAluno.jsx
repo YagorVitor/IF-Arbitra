@@ -30,16 +30,18 @@ export default function ResultadoAluno() {
     );
   }
 
+  const trioMode = round?.formation_mode === 'TRIOS';
+
   return (
     <div className="app-page">
-      <div className="app-page-head"><div><p className="app-eyebrow">Resultado · {round?.name}</p><h1 className="app-title">Resultado da rodada</h1><p className="app-subtitle">Acompanhe a alocação do seu sexteto e a ordem processada.</p></div>{isPublished && <span className="app-pill">Publicado</span>}</div>
+      <div className="app-page-head"><div><p className="app-eyebrow">Resultado · {round?.name}</p><h1 className="app-title">Resultado da rodada</h1><p className="app-subtitle">Acompanhe a alocação do seu {trioMode ? 'trio' : 'sexteto'} e a ordem processada.</p></div>{isPublished && <span className="app-pill">Publicado</span>}</div>
 
       {!isPublished ? (
         <ResultUnpublished roundName={round?.name} />
       ) : !allocation ? (
         <div className="max-w-4xl">
           <Alert variant="info" title="Sem participação registrada">
-            Você não faz parte de nenhum sexteto confirmado nesta rodada.
+            Você não faz parte de nenhum grupo confirmado nesta rodada.
           </Alert>
         </div>
       ) : (
@@ -47,6 +49,7 @@ export default function ResultadoAluno() {
           allocation={allocation} 
           isAllocated={isAllocated} 
           getStaffName={getStaffName} 
+          trioMode={trioMode}
         />
       )}
     </div>

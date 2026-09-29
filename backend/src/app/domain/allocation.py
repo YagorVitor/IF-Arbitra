@@ -61,3 +61,134 @@ def allocate(candidates: list[Candidate], staff_order: list[str]) -> list[dict]:
         if chosen:
             used[chosen] = c.id
     return result
+
+
+def allocate_trios(candidates: list[Candidate], staff_order: list[str]) -> list[dict]:
+    """Pair trios by preference pass, then registration time, with one pair per staff."""
+    if len(set(staff_order)) != len(staff_order):
+        raise ValueError("Duplicate eligible staff")
+    if len({c.id for c in candidates}) != len(candidates):
+        raise ValueError("Candidate IDs must be unique")
+    if len({c.sequence for c in candidates}) != len(candidates):
+        raise ValueError("Priority sequence must be unique")
+    eligible = set(staff_order)
+    for candidate in candidates:
+        if candidate.preferences and (
+            len(candidate.preferences) != len(staff_order) or set(candidate.preferences) != eligible
+        ):
+            raise ValueError("Incomplete preference snapshot")
+
+    priority = sorted(candidates, key=lambda c: (c.registered_at, c.sequence))
+    remaining = {c.id: c for c in priority}
+    available = set(staff_order)
+    pairs: list[tuple[str, Candidate, Candidate, int | None]] = []
+
+    # At each preference position, fill complete sextets only. A trio that did
+    # not find a partner stays in the pool for its next preference.
+    for preference_pass in range(len(staff_order)):
+        while True:
+            proposals = []
+            for staff_index, staff_id in enumerate(staff_order):
+                if staff_id not in available:
+                    continue
+                interested = sorted(
+                    (
+                        c
+                        for c in remaining.values()
+                        if c.preferences and c.preferences.index(staff_id) <= preference_pass
+                    ),
+                    key=lambda c: (c.preferences.index(staff_id), c.registered_at, c.sequence),
+                )
+                if len(interested) < 2:
+                    continue
+                first, second = interested[:2]
+                proposals.append(
+                    (
+                        max(first.preferences.index(staff_id), second.preferences.index(staff_id)),
+                        first.registered_at,
+                        first.sequence,
+                        second.registered_at,
+                        second.sequence,
+                        staff_index,
+                        staff_id,
+                        first,
+                        second,
+                    )
+                )
+            if not proposals:
+                break
+            *_, staff_id, first, second = min(proposals)
+            pairs.append((staff_id, first, second, preference_pass + 1))
+            available.remove(staff_id)
+            del remaining[first.id]
+            del remaining[second.id]
+
+    # Ranked trios take precedence over trios without a submitted list. A
+    # complete pair in repescagem uses the first still available preference.
+    fallback = sorted(
+        remaining.values(),
+        key=lambda c: (not bool(c.preferences), c.registered_at, c.sequence),
+    )
+    while len(fallback) >= 2 and available:
+        first, second = fallback[:2]
+        ranking = first.preferences or second.preferences or tuple(staff_order)
+        staff_id = next(staff for staff in ranking if staff in available)
+        pairs.append((staff_id, first, second, None))
+        available.remove(staff_id)
+        del remaining[first.id]
+        del remaining[second.id]
+        fallback = fallback[2:]
+
+    result = []
+    for staff_id, first, second, preference_pass in pairs:
+        for slot, (candidate, partner) in enumerate(((first, second), (second, first)), 1):
+            result.append(
+                {
+                    "sextet_id": candidate.id,
+                    "staff_id": staff_id,
+                    "staff_slot": slot,
+                    "kind": "MAIN" if candidate.preferences else "REPECHAGE",
+                    "status": "ALLOCATED",
+                    "preference_position": candidate.preferences.index(staff_id) + 1
+                    if candidate.preferences
+                    else None,
+                    "trace": {
+                        "processing_order": len(result) + 1,
+                        "registration_completed_at": candidate.registered_at.isoformat(),
+                        "priority_sequence": candidate.sequence,
+                        "ranking": list(candidate.preferences),
+                        "fallback_order": staff_order if not candidate.preferences else [],
+                        "unavailable": [],
+                        "chosen": staff_id,
+                        "reason": "PREFERENCE_PAIR" if preference_pass else "FALLBACK_PAIR",
+                        "preference_pass": preference_pass,
+                        "paired_with": partner.id,
+                    },
+                }
+            )
+    for candidate in priority:
+        if candidate.id not in remaining:
+            continue
+        result.append(
+            {
+                "sextet_id": candidate.id,
+                "staff_id": None,
+                "staff_slot": 1,
+                "kind": "MAIN" if candidate.preferences else "REPECHAGE",
+                "status": "UNALLOCATED",
+                "preference_position": None,
+                "trace": {
+                    "processing_order": len(result) + 1,
+                    "registration_completed_at": candidate.registered_at.isoformat(),
+                    "priority_sequence": candidate.sequence,
+                    "ranking": list(candidate.preferences),
+                    "fallback_order": staff_order if not candidate.preferences else [],
+                    "unavailable": [],
+                    "chosen": None,
+                    "reason": "AWAITING_PAIR" if available else "CAPACITY_EXHAUSTED",
+                    "preference_pass": None,
+                    "paired_with": None,
+                },
+            }
+        )
+    return result

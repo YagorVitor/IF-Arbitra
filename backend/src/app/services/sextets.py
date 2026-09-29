@@ -37,6 +37,10 @@ def register_sextet(db, request, round_id, user, data):
         )
     if len(set(data.members)) != len(data.members):
         raise DomainError("DUPLICATE_MEMBER", "Selecione alunos diferentes.", 422)
+    if round_.formation_mode == "TRIOS" and len(data.members) != 3:
+        raise DomainError(
+            "INVALID_TRIO_COMPOSITION", "O trio deve ter exatamente três alunos.", 422
+        )
     students = list(
         db.scalars(
             select(User)

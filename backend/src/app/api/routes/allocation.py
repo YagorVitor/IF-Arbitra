@@ -14,6 +14,7 @@ from app.db.models import (
     InstitutionalStaff,
     Sextet,
     SextetMember,
+    User,
 )
 from app.db.session import SessionFactory, database_now
 from app.services.allocation import process_allocation
@@ -64,6 +65,28 @@ def results(round_id: UUID, user=Depends(current_user)):
             raise DomainError("ROUND_NOT_FOUND", "Rodada não encontrada.", 404)
         if user.role != "ADMIN" and r.status not in {"PUBLISHED", "ARCHIVED"}:
             return {"published": False, "allocations": []}
+        round_allocations = list(
+            db.scalars(select(Allocation).where(Allocation.round_id == round_id))
+        )
+        by_staff = {}
+        for allocation in round_allocations:
+            if allocation.staff_id:
+                by_staff.setdefault(allocation.staff_id, []).append(allocation)
+        trio_ids = {a.sextet_id for a in round_allocations}
+        trio_names = (
+            dict(db.execute(select(Sextet.id, Sextet.name).where(Sextet.id.in_(trio_ids))).all())
+            if trio_ids
+            else {}
+        )
+        members_by_trio = {id_: [] for id_ in trio_ids}
+        if trio_ids:
+            for trio_id, slot, member_id, name in db.execute(
+                select(SextetMember.sextet_id, SextetMember.slot, User.id, User.name)
+                .join(User, SextetMember.user_id == User.id)
+                .where(SextetMember.sextet_id.in_(trio_ids))
+                .order_by(SextetMember.sextet_id, SextetMember.slot)
+            ):
+                members_by_trio[trio_id].append({"slot": slot, "id": member_id, "name": name})
         stmt = (
             select(Allocation, Sextet.name, InstitutionalStaff.name)
             .select_from(Allocation)
@@ -89,6 +112,21 @@ def results(round_id: UUID, user=Depends(current_user)):
                     "sextet_name": name,
                     "staff_name": staff_name,
                     "staff_id": a.staff_id,
+                    "staff_slot": a.staff_slot,
+                    "partner_trio": next(
+                        (
+                            {
+                                "id": partner.sextet_id,
+                                "name": trio_names[partner.sextet_id],
+                                "members": members_by_trio[partner.sextet_id],
+                            }
+                            for partner in by_staff.get(a.staff_id, [])
+                            if partner.sextet_id != a.sextet_id
+                        ),
+                        None,
+                    )
+                    if r.formation_mode == "TRIOS" and a.staff_id
+                    else None,
                     "run_id": a.run_id,
                     "status": a.status,
                     "kind": a.kind,

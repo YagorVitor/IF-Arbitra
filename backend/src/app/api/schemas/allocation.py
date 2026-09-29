@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.api.schemas.sextets import MemberOut
+
 
 class AllocationRunSummaryOut(BaseModel):
     id: UUID
@@ -25,6 +27,14 @@ class AllocationTraceOut(BaseModel):
     unavailable: list[UnavailableStaffOut] | None = None
     chosen: UUID | None
     reason: str
+    preference_pass: int | None = None
+    paired_with: UUID | None = None
+
+
+class PairedTrioOut(BaseModel):
+    id: UUID
+    name: str
+    members: list[MemberOut]
 
 
 class AllocationOut(BaseModel):
@@ -33,6 +43,8 @@ class AllocationOut(BaseModel):
     sextet_name: str
     staff_name: str | None
     staff_id: UUID | None
+    staff_slot: int
+    partner_trio: PairedTrioOut | None = None
     run_id: UUID
     status: str
     kind: str

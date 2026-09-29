@@ -71,6 +71,16 @@
             "title": "Kind",
             "type": "string"
           },
+          "partner_trio": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PairedTrioOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "preference_position": {
             "anyOf": [
               {
@@ -119,6 +129,10 @@
             ],
             "title": "Staff Name"
           },
+          "staff_slot": {
+            "title": "Staff Slot",
+            "type": "integer"
+          },
           "status": {
             "title": "Status",
             "type": "string"
@@ -133,6 +147,7 @@
           "sextet_name",
           "staff_name",
           "staff_id",
+          "staff_slot",
           "run_id",
           "status",
           "kind",
@@ -255,6 +270,29 @@
             },
             "title": "Fallback Order",
             "type": "array"
+          },
+          "paired_with": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paired With"
+          },
+          "preference_pass": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preference Pass"
           },
           "priority_sequence": {
             "title": "Priority Sequence",
@@ -573,6 +611,33 @@
         "title": "MemberOut",
         "type": "object"
       },
+      "PairedTrioOut": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/MemberOut"
+            },
+            "title": "Members",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "members"
+        ],
+        "title": "PairedTrioOut",
+        "type": "object"
+      },
       "PreferenceOut": {
         "properties": {
           "submitted_at": {
@@ -642,6 +707,15 @@
       "RoundInput": {
         "additionalProperties": false,
         "properties": {
+          "formation_mode": {
+            "default": "TRIOS",
+            "enum": [
+              "SEXTET",
+              "TRIOS"
+            ],
+            "title": "Formation Mode",
+            "type": "string"
+          },
           "name": {
             "maxLength": 160,
             "minLength": 2,
@@ -700,6 +774,14 @@
             "title": "Capacity",
             "type": "integer"
           },
+          "formation_mode": {
+            "enum": [
+              "SEXTET",
+              "TRIOS"
+            ],
+            "title": "Formation Mode",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -708,6 +790,10 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
           },
           "preferences_close_at": {
             "format": "date-time",
@@ -774,6 +860,7 @@
           "id",
           "name",
           "status",
+          "formation_mode",
           "registration_opens_at",
           "registration_closes_at",
           "preferences_open_at",
@@ -787,7 +874,8 @@
           "with_preferences",
           "repechage",
           "capacity",
-          "shortfall"
+          "shortfall",
+          "pending"
         ],
         "title": "RoundOut",
         "type": "object"

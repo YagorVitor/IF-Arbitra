@@ -21,6 +21,7 @@ class AllocationRound(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(160))
     status: Mapped[str] = mapped_column(String(24), default="DRAFT")
+    formation_mode: Mapped[str] = mapped_column(String(16), default="TRIOS", server_default="TRIOS")
     registration_opens_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     registration_closes_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     preferences_open_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
@@ -28,6 +29,7 @@ class AllocationRound(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     __table_args__ = (
         CheckConstraint("status IN ('DRAFT','OPEN','PROCESSED','PUBLISHED','ARCHIVED')"),
+        CheckConstraint("formation_mode IN ('SEXTET','TRIOS')", name="ck_round_formation_mode"),
         CheckConstraint("registration_opens_at < registration_closes_at"),
         CheckConstraint("preferences_open_at < preferences_close_at"),
         CheckConstraint("registration_closes_at <= preferences_close_at"),

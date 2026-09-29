@@ -10,6 +10,7 @@ from app.api.schemas.staff import StaffOut
 
 class RoundInput(Input):
     name: Name
+    formation_mode: Literal["SEXTET", "TRIOS"] = "TRIOS"
     registration_opens_at: AwareDatetime
     registration_closes_at: AwareDatetime
     preferences_open_at: AwareDatetime
@@ -36,6 +37,7 @@ class RoundOut(BaseModel):
     id: UUID
     name: str
     status: str
+    formation_mode: Literal["SEXTET", "TRIOS"]
     registration_opens_at: datetime
     registration_closes_at: datetime
     preferences_open_at: datetime
@@ -50,3 +52,4 @@ class RoundOut(BaseModel):
     repechage: int
     capacity: int
     shortfall: int
+    pending: int

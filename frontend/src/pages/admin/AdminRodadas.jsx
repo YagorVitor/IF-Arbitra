@@ -3,7 +3,7 @@ import { adminService } from '../../services/adminService';
 
 const emptyForm = {
   name: '', registration_opens_at: '', registration_closes_at: '',
-  preferences_open_at: '', preferences_close_at: '', staff_ids: [],
+  preferences_open_at: '', preferences_close_at: '', staff_ids: [], formation_mode: 'TRIOS',
 };
 
 function localInput(iso) {
@@ -63,6 +63,7 @@ export default function AdminRodadas() {
     setEditingId(round.id);
     setForm({
       name: round.name,
+      formation_mode: round.formation_mode,
       registration_opens_at: localInput(round.registration_opens_at),
       registration_closes_at: localInput(round.registration_closes_at),
       preferences_open_at: localInput(round.preferences_open_at),
@@ -120,6 +121,8 @@ export default function AdminRodadas() {
         <div className="app-section-head"><div><h2>{editingId ? 'Editar rascunho' : 'Criar rodada'}</h2><p>Defina a janela dos grupos, a janela de preferências e os servidores elegíveis.</p></div></div>
         <form onSubmit={saveRound} className="space-y-4">
           <label className="block text-sm">Nome da rodada<input required minLength={2} maxLength={160} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1 block w-full border rounded px-3 py-2" /></label>
+          <label className="block text-sm">Formação dos grupos<select value={form.formation_mode} onChange={(e) => setForm({ ...form, formation_mode: e.target.value })} className="mt-1 block w-full border rounded px-3 py-2"><option value="TRIOS">Trios reunidos automaticamente em sextetos</option><option value="SEXTET">Sextetos formados pelos alunos (modo anterior)</option></select></label>
+          {form.formation_mode === 'TRIOS' && <p className="text-sm app-muted">Cada servidor recebe dois trios. A seleção começa pela primeira preferência e usa a ordem de confirmação para desempatar. Trios sem par ou vaga ficam pendentes.</p>}
           <div className="grid sm:grid-cols-2 gap-4">
             {[
               ['registration_opens_at', 'Início da confirmação dos grupos'],
@@ -142,7 +145,7 @@ export default function AdminRodadas() {
         {!loading && rounds.length === 0 && <p className="text-sm text-gray-600">Nenhuma rodada criada.</p>}
         {rounds.map((round) => <article key={round.id} className="app-card app-card-pad space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold text-lg">{round.name}</h3><span className={`app-pill ${round.status === 'OPEN' ? '' : 'neutral'}`}>{({DRAFT:'Rascunho',OPEN:'Aberta',PROCESSED:'Processada',PUBLISHED:'Publicada',ARCHIVED:'Arquivada'})[round.status] || round.status}</span></div>
-          <p className="text-sm text-gray-600">Grupos: {round.registered} · Preferências: {round.with_preferences} · Servidores: {round.capacity} · Sem capacidade: {round.shortfall}</p>
+          <p className="text-sm text-gray-600">{round.formation_mode === 'TRIOS' ? 'Trios' : 'Grupos'}: {round.registered} · Preferências: {round.with_preferences} · Vagas para {round.formation_mode === 'TRIOS' ? 'trios' : 'grupos'}: {round.capacity} · {round.status === 'PROCESSED' || round.status === 'PUBLISHED' || round.status === 'ARCHIVED' ? `Pendentes: ${round.pending}` : `Excedentes: ${round.shortfall}`}</p>
           <p className="text-xs text-gray-600">Grupos: {displayDate(round.registration_opens_at)} a {displayDate(round.registration_closes_at)} · Preferências: {displayDate(round.preferences_open_at)} a {displayDate(round.preferences_close_at)}</p>
           <div className="app-actions pt-1">
             {round.status === 'DRAFT' && <><button disabled={busy} onClick={() => startEdit(round)} className="app-button secondary">Editar</button><button disabled={busy} onClick={() => transition(round, 'open')} className="app-button">Abrir</button></>}
@@ -157,7 +160,7 @@ export default function AdminRodadas() {
       {selectedId && <section className="app-card app-card-pad space-y-3">
         <h2 className="text-lg font-semibold">Detalhes da rodada</h2>
         {sextets && <div><h3 className="font-medium">Grupos ({sextets.length})</h3><ol className="list-decimal pl-5 text-sm">{sextets.map((group) => <li key={group.id}>{group.name} · {group.member_count} integrantes · prioridade #{group.priority_sequence}</li>)}</ol></div>}
-        {results && <div><h3 className="font-medium">Alocações ({results.allocations.length})</h3><p className="text-xs text-gray-600">{results.published ? 'Publicadas' : 'Ainda não publicadas aos alunos'}</p><ol className="list-decimal pl-5 text-sm">{results.allocations.map((item) => <li key={item.id}>{item.sextet_name}: {item.staff_name || 'Sem servidor'} ({item.kind === 'REPECHAGE' ? 'repescagem' : 'ranking'})</li>)}</ol></div>}
+        {results && <div><h3 className="font-medium">Alocações ({results.allocations.length})</h3><p className="text-xs text-gray-600">{results.published ? 'Publicadas' : 'Ainda não publicadas aos alunos'}</p>{results.allocations.some((item) => item.status === 'UNALLOCATED') && <p className="mt-2 p-3 rounded bg-amber-50 text-amber-900 border border-amber-200">{results.allocations.filter((item) => item.status === 'UNALLOCATED').length} grupo(s) pendente(s). A administração fará o ajuste fora do sistema.</p>}<ol className="list-decimal pl-5 text-sm mt-3 space-y-1">{results.allocations.map((item) => <li key={item.id}>{item.sextet_name}: {item.staff_name || 'Pendente'}{item.partner_trio ? `, junto ao ${item.partner_trio.name}` : ''} ({item.kind === 'REPECHAGE' ? 'repescagem' : 'ranking'})</li>)}</ol></div>}
       </section>}
     </div>
   );

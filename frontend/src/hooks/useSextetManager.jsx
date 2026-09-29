@@ -41,7 +41,7 @@ export function useSextetManager(currentUser, initialRoundId) {
           const me = students.find((s) => s.login.toLowerCase() === currentUser.login.toLowerCase());
           setIsOccupiedGlobally(Boolean(me?.occupied));
         }
-      } catch (err) { setError(err.message || 'Erro ao verificar sexteto existente.'); }
+      } catch (err) { setError(err.message || 'Erro ao verificar grupo existente.'); }
       finally { setIsLoading(false); }
     }
     fetchMySextet();
@@ -63,8 +63,8 @@ export function useSextetManager(currentUser, initialRoundId) {
         const existing = await roundService.getMySextet(roundId).catch(() => null);
         if (existing) { setExistingSextet(existing); return; }
       }
-      const messages = { INTEGRITY_CONFLICT: 'Um dos integrantes já pertence a outro grupo ativo.', STUDENT_ALREADY_IN_SEXTET: 'Um dos integrantes já pertence a outro grupo ativo.', REGISTRATION_WINDOW_CLOSED: 'A janela de confirmação desta rodada foi encerrada.', IDEMPOTENCY_CONFLICT: 'Esta confirmação já foi usada com outra composição.', INVALID_SEXTET_COMPOSITION: 'O grupo deve ter de 3 a 6 alunos ativos.', DUPLICATE_MEMBER: 'Selecione alunos diferentes.' };
-      setError(messages[err.code] || err.message || 'Falha ao confirmar o sexteto.');
+      const messages = { INTEGRITY_CONFLICT: 'Um dos integrantes já pertence a outro grupo ativo.', STUDENT_ALREADY_IN_SEXTET: 'Um dos integrantes já pertence a outro grupo ativo.', REGISTRATION_WINDOW_CLOSED: 'A janela de confirmação desta rodada foi encerrada.', IDEMPOTENCY_CONFLICT: 'Esta confirmação já foi usada com outra composição.', INVALID_SEXTET_COMPOSITION: 'O grupo deve ter de 3 a 6 alunos ativos.', INVALID_TRIO_COMPOSITION: 'O trio deve ter exatamente três alunos.', DUPLICATE_MEMBER: 'Selecione alunos diferentes.' };
+      setError(messages[err.code] || err.message || 'Falha ao confirmar o grupo.');
     } finally { setIsSubmitting(false); }
   };
 

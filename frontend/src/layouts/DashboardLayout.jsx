@@ -14,7 +14,7 @@ export default function DashboardLayout() {
         <Sidebar />
         <main id="conteudo" className="app-main"><Outlet /></main>
       </div>
-      <footer className="app-footer"><strong>IF-Arbitra</strong><span>Sistema de alocação de sextetos</span><span>Instituto Federal</span></footer>
+      <footer className="app-footer"><strong>IF-Arbitra</strong><span>Sistema de alocação de grupos</span><span>Instituto Federal</span></footer>
       <Toaster position="bottom-right" richColors closeButton />
     </div></MotionConfig>
   );

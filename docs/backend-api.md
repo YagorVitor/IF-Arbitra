@@ -303,6 +303,7 @@ Transições não podem pular etapas. Depois que uma rodada é aberta, seus praz
   "id": "560621c2-b96b-4131-aa65-044641958794",
   "name": "Processo 2026",
   "status": "OPEN",
+  "formation_mode": "TRIOS",
   "registration_opens_at": "2026-09-01T08:00:00-03:00",
   "registration_closes_at": "2026-09-10T18:00:00-03:00",
   "preferences_open_at": "2026-09-01T08:00:00-03:00",
@@ -319,25 +320,27 @@ Transições não podem pular etapas. Depois que uma rodada é aberta, seus praz
       "order": 0
     }
   ],
-  "registered": 8,
-  "with_preferences": 6,
-  "repechage": 2,
-  "capacity": 14,
-  "shortfall": 0
+  "registered": 2,
+  "with_preferences": 2,
+  "repechage": 0,
+  "capacity": 2,
+  "shortfall": 0,
+  "pending": 0
 }
 ```
 
 Os campos calculados permitem que a interface use o relógio e as decisões do backend:
 
 - `server_now`: horário oficial observado pelo banco.
-- `registration_open`: a confirmação de sexteto está autorizada agora.
+- `registration_open`: a confirmação do grupo está autorizada agora.
 - `preferences_open`: o envio de preferências está autorizado agora.
 - `can_process`: a administração já pode executar a alocação.
-- `registered`: total de sextetos confirmados.
+- `registered`: total de grupos confirmados.
 - `with_preferences`: total com ranking válido.
 - `repechage`: total sem ranking, destinado à repescagem.
-- `capacity`: quantidade de servidores elegíveis.
-- `shortfall`: quantidade de sextetos além da capacidade exclusiva.
+- `capacity`: quantidade de vagas para trios (`2 × servidores`) ou grupos legados (`1 × servidores`).
+- `shortfall`: quantidade de grupos além da capacidade da rodada.
+- `pending`: grupos sem servidor após o processamento, inclusive um trio que ficou sem par.
 
 ### `GET /api/rounds`
 
@@ -360,6 +363,7 @@ Corpo de criação/edição:
 ```json
 {
   "name": "Processo 2026",
+  "formation_mode": "TRIOS",
   "registration_opens_at": "2026-09-01T08:00:00-03:00",
   "registration_closes_at": "2026-09-10T18:00:00-03:00",
   "preferences_open_at": "2026-09-01T08:00:00-03:00",
@@ -376,6 +380,7 @@ Regras:
 - `registration_opens_at < registration_closes_at <= preferences_close_at`.
 - `preferences_open_at < preferences_close_at`.
 - `staff_ids` deve conter de 1 a 500 UUIDs únicos de servidores ativos existentes.
+- `formation_mode` aceita `TRIOS` (padrão para rodadas novas) ou `SEXTET` (modo anterior). O modo fica congelado quando a rodada é aberta. Rodadas anteriores à migration `0010_trio_formation` permanecem `SEXTET`.
 
 Erros principais: `ROUND_NOT_FOUND` (`404`), `ROUND_FROZEN` (`409`) e `STAFF_NOT_ELIGIBLE` (`422`).
 
@@ -405,13 +410,13 @@ Erros principais: `ROUND_NOT_FOUND` (`404`), `INVALID_ROUND_TRANSITION` (`409`),
 
 ### Organização dos integrantes
 
-O array `members` possui de três a seis UUIDs distintos. A posição `0` é o líder administrativo, que confirma o grupo e envia as preferências. As demais posições preservam a ordem escolhida. Não há limite específico para a quantidade de grupos menores por rodada. Todos participam da mesma ordem de prioridade e da mesma alocação. O nome `sextet` nas rotas é mantido por compatibilidade.
+Em rodadas `TRIOS`, `members` possui exatamente três UUIDs distintos. Em rodadas antigas `SEXTET`, continua aceitando de três a seis. A posição `0` é o líder do grupo, que o confirma e envia as preferências. As demais posições preservam a ordem escolhida. O nome `sextet` nas rotas e tabelas é mantido por compatibilidade.
 
 | Índice | Papel |
 | --- | --- |
 | `0` | Líder do grupo |
 | `1` a `2` | Demais integrantes obrigatórios |
-| `3` a `5` | Integrantes opcionais |
+| `3` a `5` | Integrantes opcionais somente no modo `SEXTET` |
 
 ### Formato `Sextet`
 
@@ -467,13 +472,13 @@ Corpo:
 Regras:
 
 - A rodada deve estar `OPEN` e o banco deve observar `registration_opens_at <= agora < registration_closes_at`.
-- Os três a seis UUIDs devem ser distintos e pertencer a alunos ativos.
+- Os UUIDs devem ser distintos e pertencer a alunos ativos. Rodadas `TRIOS` exigem exatamente três; rodadas `SEXTET` aceitam de três a seis.
 - O aluno autenticado deve ser o primeiro integrante e possuir papel `STUDENT`.
 - Um aluno pode pertencer a no máximo um sexteto ativo em todo o sistema.
 - `idempotency_key` deve ser gerado uma vez pelo cliente e reutilizado somente ao repetir exatamente a mesma confirmação.
 - A prioridade é `(registration_completed_at, priority_sequence)`, ambos produzidos pelo backend/banco.
 
-Erros principais: `ROUND_NOT_FOUND`, `REGISTRATION_WINDOW_CLOSED`, `NOT_SEXTET_LEADER`, `DUPLICATE_MEMBER`, `INVALID_SEXTET_COMPOSITION`, `STUDENT_ALREADY_IN_SEXTET` e `IDEMPOTENCY_CONFLICT`.
+Erros principais: `ROUND_NOT_FOUND`, `REGISTRATION_WINDOW_CLOSED`, `NOT_SEXTET_LEADER`, `DUPLICATE_MEMBER`, `INVALID_TRIO_COMPOSITION`, `INVALID_SEXTET_COMPOSITION`, `STUDENT_ALREADY_IN_SEXTET` e `IDEMPOTENCY_CONFLICT`.
 
 ### `GET /api/sextets/{sextet_id}`
 
@@ -548,11 +553,9 @@ Regras:
 - O banco deve observar `agora >= preferences_close_at`.
 - A operação é serializada no PostgreSQL.
 - Se já existe uma execução concluída, a rota retorna essa execução e não recalcula o resultado.
-- Sextetos com ranking completo participam primeiro, em ordem de prioridade.
-- Sextetos sem ranking participam depois, como `REPECHAGE`, também em ordem de prioridade.
-- Cada sexteto recebe a primeira opção ainda disponível.
-- Um servidor pode ser alocado a no máximo um sexteto na rodada.
-- Se a capacidade acabar, o sexteto recebe `UNALLOCATED`.
+- Nas rodadas `TRIOS`, o sistema percorre a primeira preferência de todos os trios, depois a segunda e assim por diante. Para cada servidor, seleciona os dois primeiros trios ainda disponíveis, com desempate pelo horário e sequência da confirmação. O par forma um sexteto de seis alunos. Um trio sem par continua para a próxima preferência. Trios sem lista entram na repescagem depois dos trios com ranking.
+- Cada servidor recebe no máximo um par, ou dois trios. Trio sem par ou sem vaga fica `UNALLOCATED` para acompanhamento administrativo; a resolução ocorre fora do sistema.
+- Rodadas `SEXTET` preservam a regra anterior: grupos com ranking completo participam primeiro, cada sexteto recebe a primeira opção disponível, e um servidor recebe no máximo um sexteto.
 - Ao concluir, a rodada passa para `PROCESSED`.
 
 Resposta `200`:
@@ -577,6 +580,7 @@ Visibilidade:
 - Depois de `PUBLISHED` ou em `ARCHIVED`, alunos recebem somente a alocação do próprio sexteto.
 - Administradores podem consultar todos os resultados antes da publicação.
 - A trilha de um aluno não revela qual sexteto ocupou uma opção anterior; `unavailable` é restrito à administração.
+- No modo `TRIOS`, cada alocação informa `staff_slot` (`1` ou `2`) e `partner_trio` com os três integrantes do trio reunido. Um trio pendente recebe `partner_trio: null`.
 
 Resposta `200`:
 
@@ -616,6 +620,8 @@ Valores relevantes:
 | `status` | `ALLOCATED`, `UNALLOCATED` |
 | `kind` | `MAIN`, `REPECHAGE` |
 | `trace.reason` | `FIRST_AVAILABLE`, `CAPACITY_EXHAUSTED` |
+
+No modo `TRIOS`, `trace.reason` também pode ser `PREFERENCE_PAIR`, `FALLBACK_PAIR` ou `AWAITING_PAIR`; `trace.paired_with` identifica o outro trio quando houver par.
 
 Em uma alocação `UNALLOCATED`, `staff_id`, `staff_name`, `preference_position` e `trace.chosen` são `null`.
 

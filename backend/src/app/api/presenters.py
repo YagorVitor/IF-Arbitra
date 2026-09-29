@@ -1,6 +1,7 @@
 from sqlalchemy import func, select
 
 from app.db.models import (
+    Allocation,
     InstitutionalStaff,
     PreferenceItem,
     PreferenceSubmission,
@@ -36,9 +37,23 @@ def round_views(db, rounds):
             .group_by(PreferenceSubmission.round_id)
         ).all()
     )
+    pending = dict(
+        db.execute(
+            select(Allocation.round_id, func.count())
+            .where(Allocation.round_id.in_(ids), Allocation.status == "UNALLOCATED")
+            .group_by(Allocation.round_id)
+        ).all()
+    )
     now = database_now(db)
     return [
-        _round_data(r, staff_by_round[r.id], counts.get(r.id, 0), submissions.get(r.id, 0), now)
+        _round_data(
+            r,
+            staff_by_round[r.id],
+            counts.get(r.id, 0),
+            submissions.get(r.id, 0),
+            pending.get(r.id, 0),
+            now,
+        )
         for r in rounds
     ]
 
@@ -47,11 +62,12 @@ def round_view(db, r):
     return round_views(db, [r])[0]
 
 
-def _round_data(r, staff, count, preferences, now):
+def _round_data(r, staff, count, preferences, pending, now):
     return {
         "id": r.id,
         "name": r.name,
         "status": r.status,
+        "formation_mode": r.formation_mode,
         **{
             k: getattr(r, k)
             for k in [
@@ -71,8 +87,9 @@ def _round_data(r, staff, count, preferences, now):
         "registered": count,
         "with_preferences": preferences,
         "repechage": count - preferences,
-        "capacity": len(staff),
-        "shortfall": max(0, count - len(staff)),
+        "capacity": len(staff) * (2 if r.formation_mode == "TRIOS" else 1),
+        "shortfall": max(0, count - len(staff) * (2 if r.formation_mode == "TRIOS" else 1)),
+        "pending": pending,
     }
 
 

@@ -182,6 +182,7 @@ def test_different_rounds_still_enforce_student_exclusivity(world):
 
     with world.db.begin() as db:
         other = AllocationRound(
+            formation_mode="SEXTET",
             **{
                 k: getattr(world.round, k)
                 for k in (
@@ -191,7 +192,7 @@ def test_different_rounds_still_enforce_student_exclusivity(world):
                     "preferences_open_at",
                     "preferences_close_at",
                 )
-            }
+            },
         )
         db.add(other)
         db.flush()

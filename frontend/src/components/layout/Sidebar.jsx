@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const studentItems = [
   { path: '/aluno', icon: House, label: 'Início', exact: true },
-  { path: '/aluno/sexteto', icon: UsersRound, label: 'Meu sexteto' },
+  { path: '/aluno/sexteto', icon: UsersRound, label: 'Meu grupo' },
   { path: '/aluno/preferencias', icon: ListOrdered, label: 'Preferências' },
   { path: '/aluno/resultado', icon: ClipboardCheck, label: 'Resultado' },
 ];
@@ -34,7 +34,7 @@ export function Sidebar() {
     return <NavLink key={item.path} to={path} end={item.exact} className={({ isActive }) => `app-nav-link${isActive ? ' is-active' : ''}`}><Icon size={18} strokeWidth={2} aria-hidden="true"/><span>{item.label}</span></NavLink>;
   });
   return <>
-    <aside className="app-sidebar"><div className="app-sidebar-heading">{isAdmin ? 'ADMINISTRAÇÃO' : 'ÁREA DO ALUNO'}</div><nav aria-label="Navegação principal">{links}</nav><div className="app-sidebar-note"><Clock3 size={23} aria-hidden="true"/><strong>Prioridade temporal</strong><p>A posição do sexteto é registrada no momento da confirmação.</p></div></aside>
+    <aside className="app-sidebar"><div className="app-sidebar-heading">{isAdmin ? 'ADMINISTRAÇÃO' : 'ÁREA DO ALUNO'}</div><nav aria-label="Navegação principal">{links}</nav><div className="app-sidebar-note"><Clock3 size={23} aria-hidden="true"/><strong>Prioridade temporal</strong><p>A posição do grupo é registrada no momento da confirmação.</p></div></aside>
     <nav className="app-bottom-nav" aria-label="Navegação principal no celular">{links}</nav>
   </>;
 }

@@ -7,11 +7,11 @@ def as_user(client, user):
     return client
 
 
-def register(client, world, indices=range(6), key=None):
+def register(client, world, indices=range(6), key=None, round_id=None):
     students = [world.users[i] for i in indices]
     as_user(client, students[0])
     return client.post(
-        f"/api/rounds/{world.round.id}/sextets",
+        f"/api/rounds/{round_id or world.round.id}/sextets",
         json={
             "name": "Sexteto teste",
             "members": [str(s.id) for s in students],
@@ -46,6 +46,7 @@ def prepare_groups(world, client):
 def draft_payload(world):
     return {
         "name": "Rodada nova",
+        "formation_mode": "SEXTET",
         "registration_opens_at": (world.now - timedelta(hours=1)).isoformat(),
         "registration_closes_at": (world.now + timedelta(hours=1)).isoformat(),
         "preferences_open_at": world.now.isoformat(),

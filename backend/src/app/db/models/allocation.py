@@ -49,6 +49,7 @@ class Allocation(Base):
     round_id: Mapped[uuid.UUID] = mapped_column(UUID)
     sextet_id: Mapped[uuid.UUID] = mapped_column(UUID)
     staff_id: Mapped[uuid.UUID | None] = mapped_column(UUID)
+    staff_slot: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     preference_position: Mapped[int | None] = mapped_column(Integer)
     kind: Mapped[str] = mapped_column(String(24))
     status: Mapped[str] = mapped_column(String(24))
@@ -62,7 +63,8 @@ class Allocation(Base):
             ["round_id", "staff_id"], ["round_staff.round_id", "round_staff.staff_id"]
         ),
         UniqueConstraint("round_id", "sextet_id"),
-        UniqueConstraint("round_id", "staff_id"),
+        UniqueConstraint("round_id", "staff_id", "staff_slot", name="uq_allocation_staff_slot"),
+        CheckConstraint("staff_slot BETWEEN 1 AND 2", name="ck_allocation_staff_slot"),
         CheckConstraint("kind IN ('MAIN','REPECHAGE')"),
         CheckConstraint(
             "(status = 'ALLOCATED' AND staff_id IS NOT NULL) OR "

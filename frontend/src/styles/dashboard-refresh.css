@@ -57,3 +57,4 @@
 @media(max-width:760px){.app-empty-heading .app-pill{display:none}.app-step strong{font-size:10px}.app-step small{font-size:9px}}
 @media(max-width:760px){.app-page-head{flex-wrap:wrap}.app-page-head>.app-button{font-size:13px;width:auto;min-width:0;padding:10px 16px;justify-content:center}.app-admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.app-admin-metrics .app-stat{display:block;min-height:102px;padding:14px}.app-admin-metrics .app-stat-icon{margin-bottom:10px}.app-admin-metrics .app-stat:last-child{grid-column:span 2}}
 @media(max-width:760px){.app-shell .app-page-head>.app-button{font-size:13px;width:auto;min-width:0;min-height:44px;padding:10px 16px;justify-content:center}}
+.app-group-grid.app-trio-form{grid-template-columns:minmax(0,1fr);max-width:720px}

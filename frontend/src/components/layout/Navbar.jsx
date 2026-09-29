@@ -33,7 +33,7 @@ export function Navbar() {
       <div className="app-brand" aria-label="IF-Arbitra, Instituto Federal">
         <img src={logo} alt="" /><div><strong>IF-Arbitra</strong><span>Instituto Federal</span></div>
       </div>
-      <div className="app-topbar-center"><span className="app-topbar-eyebrow">Sistema de alocação de sextetos</span><span>{roundName}</span></div>
+      <div className="app-topbar-center"><span className="app-topbar-eyebrow">Sistema de alocação de grupos</span><span>{roundName}</span></div>
       <div className="app-account">
         <span className="app-avatar" aria-hidden="true">{initials}</span>
         <div className="app-account-name"><strong>{userName}</strong><span>{user?.role === 'ADMIN' ? 'Administrador' : 'Aluno'}</span></div>

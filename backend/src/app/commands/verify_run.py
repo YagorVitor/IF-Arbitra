@@ -10,14 +10,18 @@ from sqlalchemy import select
 
 from app.db.models import Allocation, AllocationRun
 from app.db.session import SessionFactory
-from app.domain.allocation import Candidate, allocate
+from app.domain.allocation import Candidate, allocate, allocate_trios
 
 
 def verify(db, run_id: UUID) -> int:
     run = db.get(AllocationRun, run_id)
     if run is None or run.status != "COMPLETED":
         raise ValueError("Informe uma execução concluída existente.")
-    if run.algorithm_version != "serial-priority-v1":
+    algorithms = {
+        "serial-priority-v1": allocate,
+        "trio-preference-pairs-v1": allocate_trios,
+    }
+    if run.algorithm_version not in algorithms:
         raise ValueError("Versão do algoritmo não suportada por este verificador.")
     snapshot = run.snapshot
     fingerprint = hashlib.sha256(
@@ -34,11 +38,16 @@ def verify(db, run_id: UUID) -> int:
         )
         for g in snapshot["groups"]
     ]
-    expected = allocate(candidates, snapshot["staff_order"])
+    expected = algorithms[run.algorithm_version](candidates, snapshot["staff_order"])
     persisted = {
         str(a.sextet_id): {
             "sextet_id": str(a.sextet_id),
             "staff_id": str(a.staff_id) if a.staff_id else None,
+            **(
+                {"staff_slot": a.staff_slot}
+                if run.algorithm_version == "trio-preference-pairs-v1"
+                else {}
+            ),
             "kind": a.kind,
             "status": a.status,
             "preference_position": a.preference_position,

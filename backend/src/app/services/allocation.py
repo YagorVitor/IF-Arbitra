@@ -14,7 +14,7 @@ from app.db.models import (
     Sextet,
 )
 from app.db.session import database_now
-from app.domain.allocation import Candidate, allocate
+from app.domain.allocation import Candidate, allocate, allocate_trios
 from app.services.rounds import eligible_staff, locked_round
 
 
@@ -62,6 +62,7 @@ def process_allocation(db, request, round_id, user):
     }
     snapshot = {
         "round_id": str(round_id),
+        "formation_mode": round_.formation_mode,
         "staff_order": [str(s) for s in staff],
         "staff_names": names,
         "groups": [
@@ -78,6 +79,9 @@ def process_allocation(db, request, round_id, user):
     run = AllocationRun(
         round_id=round_id,
         status="PROCESSING",
+        algorithm_version="trio-preference-pairs-v1"
+        if round_.formation_mode == "TRIOS"
+        else "serial-priority-v1",
         executed_by=user.id,
         snapshot=snapshot,
         input_fingerprint=hashlib.sha256(
@@ -94,13 +98,15 @@ def process_allocation(db, request, round_id, user):
         {"fingerprint": run.input_fingerprint},
         entity_type="ALLOCATION_RUN",
     )
-    for result in allocate(candidates, [str(s) for s in staff]):
+    algorithm = allocate_trios if round_.formation_mode == "TRIOS" else allocate
+    for result in algorithm(candidates, [str(s) for s in staff]):
         db.add(
             Allocation(
                 run_id=run.id,
                 round_id=round_id,
                 sextet_id=UUID(result["sextet_id"]),
                 staff_id=UUID(result["staff_id"]) if result["staff_id"] else None,
+                staff_slot=result.get("staff_slot", 1),
                 kind=result["kind"],
                 status=result["status"],
                 preference_position=result["preference_position"],
