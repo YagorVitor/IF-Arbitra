@@ -52,5 +52,5 @@ def test_run_history_migration_roundtrip(world):
     command.downgrade(config, "0003_audit_context")
     command.upgrade(config, "head")
     with world.db() as db:
-        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0009_group_slots"
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0010_trio_formation"
         assert db.scalar(select(func.count()).select_from(AllocationRound)) == 1
