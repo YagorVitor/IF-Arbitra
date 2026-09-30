@@ -1,5 +1,6 @@
 """Register all mapped entities against one SQLAlchemy metadata registry."""
 
+from app.db.models.adjustments import AllocationAdjustment
 from app.db.models.allocation import Allocation, AllocationRun
 from app.db.models.audit import AuditEvent
 from app.db.models.base import Base
@@ -23,5 +24,6 @@ __all__ = [
     "PreferenceItem",
     "AllocationRun",
     "Allocation",
+    "AllocationAdjustment",
     "AuditEvent",
 ]

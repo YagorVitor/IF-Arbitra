@@ -1,3 +1,4 @@
+import secrets
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -7,12 +8,14 @@ from app.api.dependencies import admin, current_user
 from app.api.schemas.users import (
     AdminStudentOut,
     CredentialDispatchOut,
+    StudentAccessOut,
     StudentSearchOut,
     UserInput,
     UserOut,
 )
 from app.core.audit import Event, record
 from app.core.errors import DomainError
+from app.core.security import hasher
 from app.db.models import (
     LoginSession,
     SextetMember,
@@ -22,6 +25,60 @@ from app.db.session import SessionFactory, database_now
 from app.services.credential_dispatch import dispatch_credentials
 
 router = APIRouter()
+
+
+@router.post("/admin/students/{student_id}/restore", response_model=UserOut, tags=["Administração"])
+def restore_student(student_id: UUID, request: Request, user=Depends(admin)):
+    with SessionFactory.begin() as db:
+        student = db.scalar(
+            select(User).where(User.id == student_id, User.role == "STUDENT").with_for_update()
+        )
+        if not student or student.removed_at is None:
+            raise DomainError("STUDENT_NOT_REMOVED", "Selecione um aluno removido existente.", 409)
+        student.removed_at = None
+        student.active = False
+        student.password_hash = None
+        student.email_verified_at = None
+        db.execute(delete(LoginSession).where(LoginSession.user_id == student.id))
+        record(
+            db,
+            request,
+            Event.ADMIN,
+            student.id,
+            {"action": "STUDENT_RESTORED"},
+            after={"active": False, "removed_at": None},
+            entity_type="USER",
+        )
+        return student
+
+
+@router.post(
+    "/admin/students/{student_id}/access", response_model=StudentAccessOut, tags=["Administração"]
+)
+def issue_student_access(student_id: UUID, request: Request, user=Depends(admin)):
+    """Explicit manual delivery: returned once, never persisted or audited in plaintext."""
+    with SessionFactory.begin() as db:
+        student = db.scalar(
+            select(User).where(User.id == student_id, User.role == "STUDENT").with_for_update()
+        )
+        if not student or student.removed_at is not None:
+            raise DomainError(
+                "STUDENT_NOT_FOUND", "Aluno não encontrado. Restaure o cadastro antes.", 404
+            )
+        password = secrets.token_urlsafe(16)
+        student.password_hash = hasher.hash(password)
+        student.active = True
+        db.execute(delete(LoginSession).where(LoginSession.user_id == student.id))
+        record(
+            db,
+            request,
+            Event.ADMIN,
+            student.id,
+            {"action": "STUDENT_ACCESS_ISSUED_MANUALLY"},
+            after={"active": True},
+            entity_type="USER",
+        )
+        return {"login": student.login, "password": password}
 
 
 @router.get("/admin/students", response_model=list[AdminStudentOut], tags=["Administração"])

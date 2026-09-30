@@ -47,10 +47,14 @@ def test_wrong_migration_is_not_ready(world, client):
 def test_run_history_migration_roundtrip(world):
 
     from alembic import command
+    from alembic.script import ScriptDirectory
 
     config = migration_config()
     command.downgrade(config, "0003_audit_context")
     command.upgrade(config, "head")
     with world.db() as db:
-        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0010_trio_formation"
+        assert (
+            db.scalar(text("SELECT version_num FROM alembic_version"))
+            == ScriptDirectory.from_config(config).get_current_head()
+        )
         assert db.scalar(select(func.count()).select_from(AllocationRound)) == 1

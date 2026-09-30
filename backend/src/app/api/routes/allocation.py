@@ -4,11 +4,16 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 
 from app.api.dependencies import admin, current_user
-from app.api.schemas.allocation import AllocationRunDetailOut, AllocationRunSummaryOut, ResultsOut
+from app.api.schemas.allocation import (
+    AdjustmentInput,
+    AdjustmentOut,
+    AllocationRunDetailOut,
+    AllocationRunSummaryOut,
+    ResultsOut,
+)
 from app.core.audit import Event, record
 from app.core.errors import DomainError
 from app.db.models import (
-    Allocation,
     AllocationRound,
     AllocationRun,
     InstitutionalStaff,
@@ -17,9 +22,16 @@ from app.db.models import (
     User,
 )
 from app.db.session import SessionFactory, database_now
+from app.services.adjustments import adjust_allocation, effective_allocations, latest_adjustments
 from app.services.allocation import process_allocation
 
 router = APIRouter()
+
+
+@router.put("/admin/rounds/{round_id}/assignments", response_model=AdjustmentOut, tags=["Alocação"])
+def adjust(round_id: UUID, data: AdjustmentInput, request: Request, user=Depends(admin)):
+    with SessionFactory.begin() as db:
+        return adjust_allocation(db, request, round_id, data, user)
 
 
 @router.post(
@@ -65,9 +77,8 @@ def results(round_id: UUID, user=Depends(current_user)):
             raise DomainError("ROUND_NOT_FOUND", "Rodada não encontrada.", 404)
         if user.role != "ADMIN" and r.status not in {"PUBLISHED", "ARCHIVED"}:
             return {"published": False, "allocations": []}
-        round_allocations = list(
-            db.scalars(select(Allocation).where(Allocation.round_id == round_id))
-        )
+        adjustments = latest_adjustments(db, [round_id])
+        round_allocations = effective_allocations(db, [round_id], adjustments)
         by_staff = {}
         for allocation in round_allocations:
             if allocation.staff_id:
@@ -87,30 +98,32 @@ def results(round_id: UUID, user=Depends(current_user)):
                 .order_by(SextetMember.sextet_id, SextetMember.slot)
             ):
                 members_by_trio[trio_id].append({"slot": slot, "id": member_id, "name": name})
-        stmt = (
-            select(Allocation, Sextet.name, InstitutionalStaff.name)
-            .select_from(Allocation)
-            .join(Sextet, Allocation.sextet_id == Sextet.id)
-            .outerjoin(InstitutionalStaff, Allocation.staff_id == InstitutionalStaff.id)
-        )
-        stmt = stmt.where(Allocation.round_id == round_id)
-        if user.role != "ADMIN":
-            stmt = stmt.where(
-                Allocation.sextet_id.in_(
-                    select(SextetMember.sextet_id).where(SextetMember.user_id == user.id)
-                )
+        staff_names = dict(db.execute(select(InstitutionalStaff.id, InstitutionalStaff.name)).all())
+        priority = list(
+            db.scalars(
+                select(Sextet.id)
+                .where(Sextet.round_id == round_id)
+                .order_by(Sextet.registration_completed_at, Sextet.priority_sequence)
             )
-        rows = db.execute(
-            stmt.order_by(Sextet.registration_completed_at, Sextet.priority_sequence)
-        ).all()
+        )
+        positions = {id_: position for position, id_ in enumerate(priority)}
+        visible = round_allocations
+        if user.role != "ADMIN":
+            memberships = set(
+                db.scalars(select(SextetMember.sextet_id).where(SextetMember.user_id == user.id))
+            )
+            visible = [a for a in visible if a.sextet_id in memberships]
+        adjustment = adjustments.get(round_id)
         return {
             "published": r.status in {"PUBLISHED", "ARCHIVED"},
+            "revision": adjustment.revision if adjustment else 0,
+            "adjustment_reason": adjustment.reason if adjustment and user.role == "ADMIN" else None,
             "allocations": [
                 {
                     "id": a.id,
                     "sextet_id": a.sextet_id,
-                    "sextet_name": name,
-                    "staff_name": staff_name,
+                    "sextet_name": trio_names[a.sextet_id],
+                    "staff_name": staff_names.get(a.staff_id),
                     "staff_id": a.staff_id,
                     "staff_slot": a.staff_slot,
                     "partner_trio": next(
@@ -131,11 +144,12 @@ def results(round_id: UUID, user=Depends(current_user)):
                     "status": a.status,
                     "kind": a.kind,
                     "preference_position": a.preference_position,
+                    "manually_adjusted": a.manually_adjusted,
                     "trace": a.trace
                     if user.role == "ADMIN"
                     else {k: v for k, v in a.trace.items() if k != "unavailable"},
                 }
-                for a, name, staff_name in rows
+                for a in sorted(visible, key=lambda a: positions[a.sextet_id])
             ],
         }
 

@@ -38,10 +38,10 @@ def test_migration_assets_are_independent_of_working_directory(tmp_path, monkeyp
 
     from app.db.migrations import migration_config
 
+    expected = ScriptDirectory.from_config(migration_config()).get_current_head()
+    assert expected is not None
     monkeypatch.chdir(tmp_path)
-    assert (
-        ScriptDirectory.from_config(migration_config()).get_current_head() == "0010_trio_formation"
-    )
+    assert ScriptDirectory.from_config(migration_config()).get_current_head() == expected
 
 
 def test_explicit_backend_directory_is_validated(tmp_path, monkeypatch):

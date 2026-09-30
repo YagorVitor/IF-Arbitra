@@ -1,7 +1,8 @@
+from collections import Counter
+
 from sqlalchemy import func, select
 
 from app.db.models import (
-    Allocation,
     InstitutionalStaff,
     PreferenceItem,
     PreferenceSubmission,
@@ -11,6 +12,7 @@ from app.db.models import (
     User,
 )
 from app.db.session import database_now
+from app.services.adjustments import effective_allocations
 
 
 def round_views(db, rounds):
@@ -37,12 +39,8 @@ def round_views(db, rounds):
             .group_by(PreferenceSubmission.round_id)
         ).all()
     )
-    pending = dict(
-        db.execute(
-            select(Allocation.round_id, func.count())
-            .where(Allocation.round_id.in_(ids), Allocation.status == "UNALLOCATED")
-            .group_by(Allocation.round_id)
-        ).all()
+    pending = Counter(
+        a.round_id for a in effective_allocations(db, ids) if a.status == "UNALLOCATED"
     )
     now = database_now(db)
     return [

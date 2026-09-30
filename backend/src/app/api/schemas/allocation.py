@@ -2,8 +2,9 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from app.api.schemas.common import Input
 from app.api.schemas.sextets import MemberOut
 
 
@@ -50,11 +51,29 @@ class AllocationOut(BaseModel):
     kind: str
     preference_position: int | None
     trace: AllocationTraceOut
+    manually_adjusted: bool = False
 
 
 class ResultsOut(BaseModel):
     published: bool
     allocations: list[AllocationOut]
+    revision: int = 0
+    adjustment_reason: str | None = None
+
+
+class AssignmentInput(Input):
+    allocation_id: UUID
+    staff_id: UUID | None
+
+
+class AdjustmentInput(Input):
+    expected_revision: int = Field(ge=0)
+    reason: str = Field(min_length=10, max_length=1000)
+    assignments: list[AssignmentInput] = Field(min_length=1, max_length=1000)
+
+
+class AdjustmentOut(BaseModel):
+    revision: int
 
 
 class AllocationRunDetailOut(BaseModel):

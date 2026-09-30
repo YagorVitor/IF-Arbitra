@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { adminService } from '../../services/adminService';
+import AssignmentEditor from '../../components/admin/AssignmentEditor';
 
 const emptyForm = {
   name: '', registration_opens_at: '', registration_closes_at: '',
@@ -91,7 +92,10 @@ export default function AdminRodadas() {
   async function transition(round, action) {
     const labels = { open: 'abrir', publish: 'publicar os resultados de', archive: 'arquivar' };
     if (!window.confirm(`Deseja ${labels[action]} a rodada “${round.name}”?`)) return;
-    await run(() => adminService.transitionRound(round.id, action), 'Estado da rodada atualizado.');
+    await run(async () => {
+      await adminService.transitionRound(round.id, action);
+      if (selectedId === round.id) setResults(await adminService.results(round.id));
+    }, 'Estado da rodada atualizado.');
   }
 
   async function allocate(round) {
@@ -100,17 +104,27 @@ export default function AdminRodadas() {
       await adminService.allocate(round.id);
       setSelectedId(round.id);
       setResults(await adminService.results(round.id));
+      setGroups(await adminService.groups(round.id));
     }, 'Alocação processada. Revise os resultados antes de publicar.');
   }
 
   async function inspect(round) {
-    setBusy(true); setError(''); setSelectedId(round.id);
+    setBusy(true); setError(''); setSelectedId(round.id); setResults(null); setGroups(null);
     try {
       const [resultRows, groupRows] = await Promise.all([adminService.results(round.id), adminService.groups(round.id)]);
       setResults(resultRows); setGroups(groupRows);
     } catch (err) { setError(err.message || 'Não foi possível carregar os detalhes.'); }
     finally { setBusy(false); }
   }
+
+  async function saveAssignments(data) {
+    await run(async () => {
+      await adminService.adjustAssignments(selectedId, data);
+      setResults(await adminService.results(selectedId));
+    }, 'Ajustes salvos. As atribuições e pendências foram atualizadas.');
+  }
+
+  const selectedRound = rounds.find((round) => round.id === selectedId);
 
   return (
     <div className="app-page">
@@ -159,7 +173,7 @@ export default function AdminRodadas() {
       {selectedId && <section className="app-card app-card-pad space-y-3">
         <h2 className="text-lg font-semibold">Detalhes da rodada</h2>
         {groups && <div><h3 className="font-medium">Grupos ({groups.length})</h3><ol className="list-decimal pl-5 text-sm">{groups.map((group) => <li key={group.id}>{group.name} · {group.member_count} integrantes · prioridade #{group.priority_sequence}</li>)}</ol></div>}
-        {results && <div><h3 className="font-medium">Alocações ({results.allocations.length})</h3><p className="text-xs text-gray-600">{results.published ? 'Publicadas' : 'Ainda não publicadas aos alunos'}</p>{results.allocations.some((item) => item.status === 'UNALLOCATED') && <p className="mt-2 p-3 rounded bg-amber-50 text-amber-900 border border-amber-200">{results.allocations.filter((item) => item.status === 'UNALLOCATED').length} grupo(s) pendente(s). A administração fará o ajuste fora do sistema.</p>}<ol className="list-decimal pl-5 text-sm mt-3 space-y-1">{results.allocations.map((item) => <li key={item.id}>{item.sextet_name}: {item.staff_name || 'Pendente'}{item.partner_trio ? `, junto ao ${item.partner_trio.name}` : ''} ({item.kind === 'REPECHAGE' ? 'repescagem' : 'ranking'})</li>)}</ol></div>}
+        {results && selectedRound && <AssignmentEditor key={`${selectedId}-${results.revision}-${selectedRound.status}`} round={selectedRound} results={results} groups={groups} busy={busy} onSave={saveAssignments}/>}
       </section>}
     </div>
   );

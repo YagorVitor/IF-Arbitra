@@ -40,6 +40,11 @@ class UserOut(BaseModel):
     role: str
 
 
+class StudentAccessOut(BaseModel):
+    login: str
+    password: str
+
+
 class AdminStudentOut(BaseModel):
     id: UUID
     name: str

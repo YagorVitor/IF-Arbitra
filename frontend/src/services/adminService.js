@@ -1,7 +1,9 @@
 import { api } from '../api/api';
 
 export const adminService = {
-  students: () => api.get('/api/admin/students'),
+  students: (includeRemoved = false) => api.get(`/api/admin/students${includeRemoved ? '?include_removed=true' : ''}`),
+  restoreStudent: (id) => api.post(`/api/admin/students/${id}/restore`),
+  issueStudentAccess: (id) => api.post(`/api/admin/students/${id}/access`),
   addStudent: (name, email) => api.post('/api/admin/students', { name, email }),
   removeStudent: (id) => api.delete(`/api/admin/students/${id}`),
   dispatchCredentials: () => api.post('/api/admin/students/dispatch-credentials'),
@@ -14,6 +16,7 @@ export const adminService = {
   transitionRound: (id, action) => api.post(`/api/admin/rounds/${id}/transition`, { action }),
   allocate: (id) => api.post(`/api/admin/rounds/${id}/allocate`),
   results: (id) => api.get(`/api/rounds/${id}/results`),
+  adjustAssignments: (id, data) => api.put(`/api/admin/rounds/${id}/assignments`, data),
   groups: (id) => api.get(`/api/admin/rounds/${id}/sextets`),
   audit: (beforeId) => api.get(`/api/admin/audit${beforeId ? `?before_id=${beforeId}` : ''}`),
 };

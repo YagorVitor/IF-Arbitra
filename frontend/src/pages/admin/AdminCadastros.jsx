@@ -15,9 +15,10 @@ export default function AdminCadastros() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [dispatch, setDispatch] = useState(null);
+  const [access, setAccess] = useState(null);
 
   const refresh = useCallback(async () => {
-    const [studentRows, staffRows] = await Promise.all([adminService.students(), adminService.staff()]);
+    const [studentRows, staffRows] = await Promise.all([adminService.students(true), adminService.staff()]);
     setStudents(studentRows);
     setStaff(staffRows);
   }, []);
@@ -62,13 +63,23 @@ export default function AdminCadastros() {
     await run(() => adminService.removeStudent(student.id), 'Aluno removido.');
   }
 
+  async function restoreStudent(student) {
+    await run(() => adminService.restoreStudent(student.id), 'Aluno restaurado. Gere um novo acesso ou envie as credenciais.');
+  }
+
+  async function issueAccess(student) {
+    if (!window.confirm(`Gerar um novo acesso para ${student.name}? A senha anterior e as sessões atuais serão invalidadas. Você verá a nova senha uma única vez para entregar ao aluno.`)) return;
+    setAccess(null);
+    await run(async () => setAccess(await adminService.issueStudentAccess(student.id)), 'Acesso gerado para entrega manual.');
+  }
+
   async function removeStaff(person) {
     if (!window.confirm(`Remover ${person.name} da lista de servidores ativos?`)) return;
     await run(() => adminService.removeStaff(person.id), 'Servidor removido.');
   }
 
   async function sendCredentials() {
-    const pending = students.filter((student) => !student.credentials_issued).length;
+    const pending = students.filter((student) => !student.removed_at && !student.credentials_issued).length;
     if (!pending) return;
     if (!window.confirm(`Enviar login e senha por e-mail aos ${pending} alunos pendentes? Essa ação envia mensagens reais e não deve ser repetida para quem já recebeu.`)) return;
     setBusy(true);
@@ -86,7 +97,8 @@ export default function AdminCadastros() {
     }
   }
 
-  const pending = students.filter((student) => !student.credentials_issued).length;
+  const currentStudents = students.filter((student) => !student.removed_at);
+  const pending = currentStudents.filter((student) => !student.credentials_issued).length;
   const activeStaff = staff.filter((person) => person.active !== false);
 
   return (
@@ -94,16 +106,17 @@ export default function AdminCadastros() {
       <div className="app-page-head"><div>
         <p className="app-eyebrow">Administração · participantes</p><h1 className="app-title">Cadastros e credenciais</h1>
         <p className="app-subtitle">Inclua ou remova exceções antes de enviar as credenciais aos alunos.</p>
-      </div><span className="app-pill neutral">{students.length} alunos</span>
+      </div><span className="app-pill neutral">{currentStudents.length} alunos</span>
       </div>
       {error && <div role="alert" className="p-3 rounded bg-red-50 text-red-800 border border-red-200">{error}</div>}
       {notice && <div role="status" className="p-3 rounded bg-green-50 text-green-800 border border-green-200">{notice}</div>}
+      {access && <section className="app-card app-card-pad space-y-2" aria-label="Acesso gerado"><h2 className="font-semibold">Acesso para entrega manual</h2><p className="text-sm">Copie os dados antes de fechar. A senha não poderá ser consultada novamente.</p><p className="break-all text-sm">Login: <code>{access.login}</code></p><p className="break-all text-sm">Senha: <code>{access.password}</code></p><button type="button" className="app-button secondary" onClick={() => setAccess(null)}>Fechar acesso</button></section>}
       {loading ? <p>Carregando cadastros...</p> : <>
         <section className="app-card app-card-pad space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold">Alunos ({students.length})</h2>
-              <p className="text-sm text-gray-600">{pending} pendentes de credenciais; {students.length - pending} já receberam.</p>
+              <h2 className="text-lg font-semibold">Alunos ({currentStudents.length})</h2>
+              <p className="text-sm text-gray-600">{pending} pendentes de credenciais; {currentStudents.length - pending} com acesso gerado.</p>
             </div>
             <button type="button" disabled={busy || pending === 0} onClick={sendCredentials} className="app-button">{busy ? 'Aguarde...' : `Enviar credenciais (${pending})`}</button>
           </div>
@@ -118,7 +131,7 @@ export default function AdminCadastros() {
           </form>
           <div className="max-h-80 overflow-auto border rounded app-data-table">
             <table className="w-full text-sm"><thead className="bg-gray-50"><tr><th className="text-left p-2">Nome</th><th className="text-left p-2">E-mail</th><th className="text-left p-2">Situação</th><th className="p-2">Ação</th></tr></thead>
-              <tbody>{students.map((student) => <tr key={student.id} className="border-t"><td data-label="Nome" className="p-2">{student.name}</td><td data-label="E-mail" className="p-2">{student.email}</td><td data-label="Situação" className="p-2">{student.credentials_issued ? 'Credenciais enviadas' : 'Pendente'}</td><td data-label="Ação" className="p-2 text-right"><button type="button" disabled={busy} onClick={() => removeStudent(student)} className="text-red-700 disabled:opacity-50">Remover</button></td></tr>)}</tbody>
+              <tbody>{students.map((student) => <tr key={student.id} className="border-t"><td data-label="Nome" className="p-2">{student.name}</td><td data-label="E-mail" className="p-2">{student.email}</td><td data-label="Situação" className="p-2">{student.removed_at ? 'Removido' : student.active ? 'Acesso ativo' : 'Pendente'}</td><td data-label="Ação" className="p-2 text-right"><div className="flex flex-wrap justify-end gap-3">{student.removed_at ? <button type="button" disabled={busy} onClick={() => restoreStudent(student)} className="text-green-700 disabled:opacity-50">Restaurar</button> : <><button type="button" disabled={busy} onClick={() => issueAccess(student)} className="text-green-700 disabled:opacity-50">Gerar acesso</button><button type="button" disabled={busy} onClick={() => removeStudent(student)} className="text-red-700 disabled:opacity-50">Remover</button></>}</div></td></tr>)}</tbody>
             </table>
           </div>
         </section>

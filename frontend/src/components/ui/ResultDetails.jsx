@@ -12,7 +12,7 @@ export default function ResultDetails({ allocation, isAllocated, getStaffName, t
         {isAllocated ? <CheckCircle className="w-8 h-8 text-green-600 shrink-0" /> : <XCircle className="w-8 h-8 text-red-600 shrink-0" />}
         <div>
           <span className="app-label">{isAllocated ? 'Servidor alocado' : trioMode ? 'Trio pendente' : 'Grupo pendente'}</span>
-          {isAllocated ? <><h2>{allocation.staff_name || getStaffName(allocation.staff_id)}</h2><p><Landmark size={15} className="inline mr-1"/>Sua preferência: {allocation.preference_position ? `${allocation.preference_position}ª` : 'repescagem'}</p></> : <><h2>{trioMode ? 'Pendente de ajuste' : 'Capacidade esgotada'}</h2><p>{trioMode ? 'Seu trio ficou sem par ou vaga. A administração fará o ajuste fora do sistema.' : 'Não foi possível alocar um servidor para o seu grupo nesta rodada.'}</p></>}
+          {isAllocated ? <><h2>{allocation.staff_name || getStaffName(allocation.staff_id)}</h2><p><Landmark size={15} className="inline mr-1"/>{allocation.manually_adjusted ? 'Atribuição definida pela administração' : `Sua preferência: ${allocation.preference_position ? `${allocation.preference_position}ª` : 'repescagem'}`}</p></> : <><h2>{trioMode ? 'Pendente de ajuste' : 'Capacidade esgotada'}</h2><p>{trioMode ? 'Seu trio ficou sem par ou vaga. A administração revisará a atribuição.' : 'Não foi possível alocar um servidor para o seu grupo nesta rodada.'}</p></>}
         </div>
       </div>
 
