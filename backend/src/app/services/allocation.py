@@ -14,7 +14,7 @@ from app.db.models import (
     Sextet,
 )
 from app.db.session import database_now
-from app.domain.allocation import Candidate, allocate, allocate_trios
+from app.domain.allocation import Candidate, allocate, allocate_groups, allocate_trios
 from app.services.rounds import eligible_staff, locked_round
 
 
@@ -79,7 +79,9 @@ def process_allocation(db, request, round_id, user):
     run = AllocationRun(
         round_id=round_id,
         status="PROCESSING",
-        algorithm_version="trio-preference-pairs-v1"
+        algorithm_version="group-preference-passes-v1"
+        if round_.formation_mode == "GROUPS"
+        else "trio-preference-pairs-v1"
         if round_.formation_mode == "TRIOS"
         else "serial-priority-v1",
         executed_by=user.id,
@@ -98,7 +100,13 @@ def process_allocation(db, request, round_id, user):
         {"fingerprint": run.input_fingerprint},
         entity_type="ALLOCATION_RUN",
     )
-    algorithm = allocate_trios if round_.formation_mode == "TRIOS" else allocate
+    algorithm = (
+        allocate_groups
+        if round_.formation_mode == "GROUPS"
+        else allocate_trios
+        if round_.formation_mode == "TRIOS"
+        else allocate
+    )
     for result in algorithm(candidates, [str(s) for s in staff]):
         db.add(
             Allocation(

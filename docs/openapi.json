@@ -802,8 +802,11 @@
         "additionalProperties": false,
         "properties": {
           "formation_mode": {
-            "const": "TRIOS",
-            "default": "TRIOS",
+            "default": "GROUPS",
+            "enum": [
+              "GROUPS",
+              "TRIOS"
+            ],
             "title": "Formation Mode",
             "type": "string"
           },
@@ -868,7 +871,8 @@
           "formation_mode": {
             "enum": [
               "SEXTET",
-              "TRIOS"
+              "TRIOS",
+              "GROUPS"
             ],
             "title": "Formation Mode",
             "type": "string"
@@ -877,6 +881,28 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "limit_seven": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Seven"
+          },
+          "limit_six": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Six"
           },
           "name": {
             "title": "Name",
@@ -902,6 +928,16 @@
           },
           "registered": {
             "title": "Registered",
+            "type": "integer"
+          },
+          "registered_seven": {
+            "default": 0,
+            "title": "Registered Seven",
+            "type": "integer"
+          },
+          "registered_six": {
+            "default": 0,
+            "title": "Registered Six",
             "type": "integer"
           },
           "registration_closes_at": {
@@ -984,7 +1020,7 @@
               "format": "uuid",
               "type": "string"
             },
-            "maxItems": 6,
+            "maxItems": 7,
             "minItems": 3,
             "title": "Members",
             "type": "array"
@@ -1093,9 +1129,21 @@
             "title": "Id",
             "type": "string"
           },
+          "leader_id": {
+            "format": "uuid",
+            "title": "Leader Id",
+            "type": "string"
+          },
           "member_count": {
             "title": "Member Count",
             "type": "integer"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/MemberOut"
+            },
+            "title": "Members",
+            "type": "array"
           },
           "name": {
             "title": "Name",
@@ -1116,7 +1164,9 @@
           "name",
           "member_count",
           "registration_completed_at",
-          "priority_sequence"
+          "priority_sequence",
+          "leader_id",
+          "members"
         ],
         "title": "SextetSummaryOut",
         "type": "object"
@@ -1125,9 +1175,16 @@
         "additionalProperties": false,
         "properties": {
           "email": {
-            "format": "email",
-            "title": "Email",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "email",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
           },
           "name": {
             "maxLength": 160,
@@ -1137,8 +1194,7 @@
           }
         },
         "required": [
-          "name",
-          "email"
+          "name"
         ],
         "title": "StaffCreateInput",
         "type": "object"

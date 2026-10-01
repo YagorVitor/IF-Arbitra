@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from app.db.models import Allocation, AllocationRun
 from app.db.session import SessionFactory
-from app.domain.allocation import Candidate, allocate, allocate_trios
+from app.domain.allocation import Candidate, allocate, allocate_groups, allocate_trios
 
 
 def verify(db, run_id: UUID) -> int:
@@ -20,6 +20,7 @@ def verify(db, run_id: UUID) -> int:
     algorithms = {
         "serial-priority-v1": allocate,
         "trio-preference-pairs-v1": allocate_trios,
+        "group-preference-passes-v1": allocate_groups,
     }
     if run.algorithm_version not in algorithms:
         raise ValueError("Versão do algoritmo não suportada por este verificador.")
@@ -45,7 +46,8 @@ def verify(db, run_id: UUID) -> int:
             "staff_id": str(a.staff_id) if a.staff_id else None,
             **(
                 {"staff_slot": a.staff_slot}
-                if run.algorithm_version == "trio-preference-pairs-v1"
+                if run.algorithm_version
+                in {"trio-preference-pairs-v1", "group-preference-passes-v1"}
                 else {}
             ),
             "kind": a.kind,

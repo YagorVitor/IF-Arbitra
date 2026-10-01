@@ -37,7 +37,7 @@ class Sextet(Base):
     )
     idempotency_key: Mapped[uuid.UUID] = mapped_column(UUID)
     __table_args__ = (
-        CheckConstraint("member_count BETWEEN 3 AND 6", name="ck_sextets_member_count"),
+        CheckConstraint("member_count BETWEEN 3 AND 7", name="ck_sextets_member_count"),
         UniqueConstraint("id", "round_id"),
         UniqueConstraint("created_by", "idempotency_key"),
         Index("ix_sextet_priority", "round_id", "registration_completed_at", "priority_sequence"),
@@ -51,7 +51,7 @@ class SextetMember(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     __table_args__ = (
-        CheckConstraint("slot BETWEEN 0 AND 5"),
+        CheckConstraint("slot BETWEEN 0 AND 6", name="ck_member_slot"),
         UniqueConstraint("sextet_id", "user_id"),
         Index("uq_student_active_sextet", "user_id", unique=True, postgresql_where=text("active")),
     )

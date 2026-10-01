@@ -7,7 +7,7 @@ from app.api.schemas.common import Input, Name
 
 class StaffCreateInput(Input):
     name: Name
-    email: EmailStr
+    email: EmailStr | None = None
 
 
 class StaffUpdateInput(Input):

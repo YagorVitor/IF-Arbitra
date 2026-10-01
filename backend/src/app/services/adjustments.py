@@ -91,7 +91,9 @@ def adjust_allocation(db, request, round_id, data, user):
     capacity = 2 if round_.formation_mode == "TRIOS" else 1
     if any(count > capacity for count in Counter(s for s in assignments.values() if s).values()):
         raise DomainError(
-            "STAFF_CAPACITY_EXCEEDED", "O servidor não pode receber mais de dois trios.", 409
+            "STAFF_CAPACITY_EXCEEDED",
+            f"O servidor admite no máximo {capacity} grupo(s) nesta rodada.",
+            409,
         )
     if all(assignments[a.id] == a.staff_id for a in allocations):
         raise DomainError("NO_ADJUSTMENT", "Altere pelo menos uma atribuição antes de salvar.", 422)

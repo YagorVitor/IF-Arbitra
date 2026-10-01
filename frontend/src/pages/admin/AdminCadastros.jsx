@@ -139,7 +139,7 @@ export default function AdminCadastros() {
           <h2 className="text-lg font-semibold">Servidores ativos ({activeStaff.length})</h2>
           <form onSubmit={addStaff} className="flex flex-wrap gap-2">
             <input aria-label="Nome do servidor" required minLength={2} maxLength={160} placeholder="Nome do servidor" value={staffForm.name} onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })} className="border rounded px-3 py-2 flex-1 min-w-48" />
-            <input aria-label="E-mail do servidor" type="email" required placeholder="E-mail do servidor" value={staffForm.email} onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })} className="border rounded px-3 py-2 flex-1 min-w-48" />
+            <input aria-label="E-mail do servidor" type="email" placeholder="E-mail do servidor (opcional)" value={staffForm.email} onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })} className="border rounded px-3 py-2 flex-1 min-w-48" />
             <button disabled={busy} className="app-button secondary">Adicionar servidor</button>
           </form>
           <div className="max-h-80 overflow-auto border rounded app-data-table">

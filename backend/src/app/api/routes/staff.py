@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.api.dependencies import admin, current_user
 from app.api.schemas.staff import StaffCreateInput, StaffOut, StaffUpdateInput
@@ -29,9 +29,15 @@ def staff(user=Depends(current_user)):
 @router.post("/admin/staff", response_model=StaffOut, status_code=201, tags=["Administração"])
 def create_staff(data: StaffCreateInput, request: Request, user=Depends(admin)):
     with SessionFactory.begin() as db:
-        address = str(data.email).casefold()
+        address = str(data.email).casefold() if data.email else None
         existing = db.scalar(
-            select(InstitutionalStaff).where(InstitutionalStaff.email == address).with_for_update()
+            select(InstitutionalStaff)
+            .where(
+                InstitutionalStaff.email == address
+                if address
+                else func.lower(InstitutionalStaff.name) == data.name.casefold()
+            )
+            .with_for_update()
         )
         if existing:
             if existing.active:

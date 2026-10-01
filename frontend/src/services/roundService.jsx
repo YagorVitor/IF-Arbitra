@@ -19,7 +19,7 @@ export const roundService = {
 
   async getRegistrationRound() {
     const rounds = await this.getAllOrdered();
-    return rounds.find((round) => round.formation_mode === 'TRIOS' && round.registration_open) || null;
+    return rounds.find((round) => round.formation_mode === 'GROUPS' && round.registration_open) || null;
   },
 
   async getPreferencesRound() {
@@ -48,5 +48,5 @@ export const roundService = {
 
   getMyGroup: (roundId) => api.get(`/api/rounds/${roundId}/my-sextet`),
   getResults: (roundId) => api.get(`/api/rounds/${roundId}/results`),
-  createTrio: (roundId, payload) => api.post(`/api/rounds/${roundId}/sextets`, payload),
+  createGroup: (roundId, payload) => api.post(`/api/rounds/${roundId}/sextets`, payload),
 };

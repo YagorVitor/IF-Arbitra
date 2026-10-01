@@ -192,3 +192,55 @@ def allocate_trios(candidates: list[Candidate], staff_order: list[str]) -> list[
             }
         )
     return result
+
+
+def allocate_groups(candidates: list[Candidate], staff_order: list[str]) -> list[dict]:
+    """One group per server: all first choices, then second choices, temporal ties."""
+    allocate(candidates, staff_order)  # Validate the complete frozen input.
+    priority = sorted(candidates, key=lambda c: (c.registered_at, c.sequence))
+    chosen = {}
+    used = {}
+    ordered = []
+    for position in range(len(staff_order)):
+        for candidate in priority:
+            if candidate.id in chosen or not candidate.preferences:
+                continue
+            staff_id = candidate.preferences[position]
+            if staff_id not in used:
+                chosen[candidate.id] = (staff_id, position + 1)
+                used[staff_id] = candidate.id
+                ordered.append(candidate)
+    for candidate in priority:
+        if candidate.preferences or candidate.id in chosen:
+            continue
+        staff_id = next((s for s in staff_order if s not in used), None)
+        if staff_id:
+            chosen[candidate.id] = (staff_id, None)
+            used[staff_id] = candidate.id
+            ordered.append(candidate)
+    ordered.extend(c for c in priority if c.id not in chosen)
+    return [
+        {
+            "sextet_id": c.id,
+            "staff_id": chosen.get(c.id, (None, None))[0],
+            "staff_slot": 1,
+            "kind": "MAIN" if c.preferences else "REPECHAGE",
+            "status": "ALLOCATED" if c.id in chosen else "UNALLOCATED",
+            "preference_position": chosen.get(c.id, (None, None))[1],
+            "trace": {
+                "processing_order": i,
+                "registration_completed_at": c.registered_at.isoformat(),
+                "priority_sequence": c.sequence,
+                "ranking": list(c.preferences),
+                "fallback_order": staff_order if not c.preferences else [],
+                "unavailable": [],
+                "chosen": chosen.get(c.id, (None, None))[0],
+                "reason": "PREFERENCE_PASS"
+                if c.id in chosen and c.preferences
+                else "FALLBACK"
+                if c.id in chosen
+                else "CAPACITY_EXHAUSTED",
+            },
+        }
+        for i, c in enumerate(ordered, 1)
+    ]

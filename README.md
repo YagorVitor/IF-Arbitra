@@ -1,6 +1,6 @@
 # IF-Arbitra
 
-Aplicação para formação de grupos de três a seis alunos, registro de prioridade temporal, preferências por servidores institucionais e alocação determinística. O backend usa Python 3.11+, FastAPI, SQLAlchemy e PostgreSQL. O frontend React/Vite está em `frontend/` e deve consumir o contrato atual da API.
+Aplicação para formação de grupos com seis integrantes obrigatórios e um sétimo opcional, registro de prioridade temporal, preferências por servidores institucionais e alocação determinística. O backend usa Python 3.11+, FastAPI, SQLAlchemy e PostgreSQL. O frontend React/Vite está em `frontend/` e deve consumir o contrato atual da API.
 
 ## Início com Docker
 
@@ -55,6 +55,10 @@ Antes de usar com alunos, configure também HTTPS, `FRONTEND_URL`, `COOKIE_SECUR
 
 O administrador pode adicionar ou remover alunos e servidores do cadastro inicial. Quando aciona o disparo de credenciais, cada aluno pendente recebe por e-mail seu login (o próprio e-mail) e uma senha individual de oito caracteres. A rodada deve ser aberta depois da conferência das entregas.
 
-Cada grupo tem de três a seis alunos; o integrante da posição 0 confirma o grupo e ordena suas preferências. Um aluno participa de no máximo um grupo ativo, inclusive entre rodadas. A prioridade usa horário do banco e sequência imutável. Rankings completos são processados antes da repescagem; cada servidor recebe até um grupo por rodada e excedentes ficam `UNALLOCATED`. A publicação é administrativa e separada do cálculo.
+Nas novas rodadas (`GROUPS`), o capitão é o aluno autenticado que cadastra o grupo e ocupa a posição 0 entre os seis integrantes obrigatórios. O sétimo integrante é opcional. Cada rodada admite até oito grupos de sete e três grupos de seis, totalizando 11 grupos e 74 alunos. A validação das quotas usa o bloqueio da rodada, inclusive em confirmações simultâneas.
+
+Um aluno participa de no máximo um grupo ativo, inclusive entre rodadas. A prioridade usa horário do banco e sequência imutável. A alocação avalia a primeira preferência de todos antes da segunda e assim por diante; a confirmação desempata as disputas. Grupos sem ranking entram na repescagem. Cada servidor recebe um grupo. O administrador publica os resultados e pode ajustar as atribuições pelo painel, com justificativa, auditoria e proteção contra sobrescrever outra revisão. Rodadas históricas mantêm seu formato e cálculo originais.
+
+A lista de servidores vigente em 01/10/2026 é Anderson, Carina, Carol Barra, Dione, Guilherme, Jurandyr, Mauro, Raphael Zambon, Renata, Rita e Rosana. Os cadastros antigos que não constam nesta lista ficam inativos para novas rodadas; as referências históricas são preservadas. Servidores podem ser cadastrados sem e-mail quando essa informação ainda não foi fornecida.
 
 Alteração/cancelamento de sextetos, capacidade maior que um e SSO dependem das decisões institucionais registradas na revisão. Nenhuma dessas políticas foi presumida nesta entrega.

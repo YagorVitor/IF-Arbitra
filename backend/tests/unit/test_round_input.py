@@ -19,8 +19,8 @@ def round_payload():
     }
 
 
-def test_new_rounds_use_trios_by_default():
-    assert RoundInput(**round_payload()).formation_mode == "TRIOS"
+def test_new_rounds_use_groups_by_default():
+    assert RoundInput(**round_payload()).formation_mode == "GROUPS"
 
 
 def test_removed_formation_mode_cannot_be_submitted():

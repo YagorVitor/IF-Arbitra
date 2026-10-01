@@ -37,17 +37,19 @@ export const router = createBrowserRouter([
                         lazy: page(() => import('../pages/aluno/HomeAluno')),
                     },
                     {
-                        path: '/aluno/trio',
-                        lazy: page(() => import('../pages/aluno/MeuTrio'))
+                        path: '/aluno/grupo',
+                        lazy: page(() => import('../pages/aluno/MeuGrupo'))
                     },
                     {
-                        path: '/aluno/trio/:roundId',
-                        lazy: page(() => import('../pages/aluno/MeuTrio'))
+                        path: '/aluno/grupo/:roundId',
+                        lazy: page(() => import('../pages/aluno/MeuGrupo'))
                     },
                     {
                         path: '/aluno/sexteto',
                         element: <PreviousGroupRoute />
                     },
+                    { path: '/aluno/trio', element: <PreviousGroupRoute /> },
+                    { path: '/aluno/trio/:roundId', element: <PreviousGroupRoute /> },
                     {
                         path: '/aluno/sexteto/:roundId',
                         element: <PreviousGroupRoute />

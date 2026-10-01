@@ -9,7 +9,7 @@ from app.api.schemas.common import Input
 class SextetInput(Input):
     name: str = Field(min_length=2, max_length=80)
     # Index 0 = authenticated group leader; remaining members retain their chosen order.
-    members: list[UUID] = Field(min_length=3, max_length=6)
+    members: list[UUID] = Field(min_length=3, max_length=7)
     idempotency_key: UUID
 
 
@@ -39,3 +39,5 @@ class SextetSummaryOut(BaseModel):
     member_count: int
     registration_completed_at: datetime
     priority_sequence: int
+    leader_id: UUID
+    members: list[MemberOut]

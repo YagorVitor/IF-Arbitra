@@ -45,7 +45,24 @@ def confirm_sextet(round_id: UUID, data: SextetInput, request: Request, user=Dep
 )
 def admin_sextets(round_id: UUID, user=Depends(admin)):
     with SessionFactory() as db:
-        # Bounded institutional dataset; the admin list avoids fetching each composition/ranking.
+        rows = list(
+            db.scalars(
+                select(Sextet)
+                .where(Sextet.round_id == round_id)
+                .order_by(Sextet.registration_completed_at, Sextet.priority_sequence)
+                .limit(500)
+            )
+        )
+        from app.db.models import User
+
+        members = {s.id: [] for s in rows}
+        for group_id, slot, member_id, name in db.execute(
+            select(SextetMember.sextet_id, SextetMember.slot, User.id, User.name)
+            .join(User, User.id == SextetMember.user_id)
+            .where(SextetMember.sextet_id.in_(members))
+            .order_by(SextetMember.sextet_id, SextetMember.slot)
+        ):
+            members[group_id].append({"slot": slot, "id": member_id, "name": name})
         return [
             {
                 "id": s.id,
@@ -53,13 +70,10 @@ def admin_sextets(round_id: UUID, user=Depends(admin)):
                 "member_count": s.member_count,
                 "registration_completed_at": s.registration_completed_at,
                 "priority_sequence": s.priority_sequence,
+                "leader_id": s.created_by,
+                "members": members[s.id],
             }
-            for s in db.scalars(
-                select(Sextet)
-                .where(Sextet.round_id == round_id)
-                .order_by(Sextet.registration_completed_at, Sextet.priority_sequence)
-                .limit(500)
-            )
+            for s in rows
         ]
 
 

@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core.audit import Event, record
 from app.core.errors import DomainError
@@ -40,6 +40,31 @@ def register_sextet(db, request, round_id, user, data):
     if round_.formation_mode == "TRIOS" and len(data.members) != 3:
         raise DomainError(
             "INVALID_TRIO_COMPOSITION", "O trio deve ter exatamente três alunos.", 422
+        )
+    if round_.formation_mode == "GROUPS":
+        if len(data.members) not in {6, 7}:
+            raise DomainError(
+                "INVALID_GROUP_COMPOSITION",
+                "Informe seis integrantes obrigatórios, incluindo o capitão, e um sétimo opcional.",
+                422,
+            )
+        count = db.scalar(
+            select(func.count())
+            .select_from(Sextet)
+            .where(Sextet.round_id == round_id, Sextet.member_count == len(data.members))
+        )
+        limit = 3 if len(data.members) == 6 else 8
+        if count >= limit:
+            raise DomainError(
+                "GROUP_SIZE_LIMIT_REACHED",
+                f"Esta rodada já tem {limit} grupos com {len(data.members)} integrantes.",
+                409,
+            )
+    elif round_.formation_mode == "SEXTET" and len(data.members) > 6:
+        raise DomainError(
+            "INVALID_SEXTET_COMPOSITION",
+            "A composição desta rodada histórica admite até seis alunos.",
+            422,
         )
     students = list(
         db.scalars(
@@ -94,7 +119,7 @@ def register_sextet(db, request, round_id, user, data):
 def owned_sextet(db, sextet_id, user, leader=False):
     sextet = db.get(Sextet, sextet_id)
     if not sextet:
-        raise DomainError("SEXTET_NOT_FOUND", "Sexteto não encontrado.", 404)
+        raise DomainError("SEXTET_NOT_FOUND", "Grupo não encontrado.", 404)
     member = db.scalar(
         select(SextetMember).where(
             SextetMember.sextet_id == sextet.id, SextetMember.user_id == user.id
@@ -102,8 +127,8 @@ def owned_sextet(db, sextet_id, user, leader=False):
     )
     if leader and sextet.created_by != user.id:
         raise DomainError(
-            "NOT_SEXTET_LEADER", "Somente o líder do grupo pode enviar preferências.", 403
+            "NOT_SEXTET_LEADER", "Somente o capitão do grupo pode enviar preferências.", 403
         )
     if not leader and not member and user.role != "ADMIN":
-        raise DomainError("SEXTET_NOT_FOUND", "Sexteto não encontrado.", 404)
+        raise DomainError("SEXTET_NOT_FOUND", "Grupo não encontrado.", 404)
     return sextet

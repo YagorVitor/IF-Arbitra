@@ -32,6 +32,13 @@ def round_views(db, rounds):
             .group_by(Sextet.round_id)
         ).all()
     )
+    sizes = Counter()
+    for rid, size, count in db.execute(
+        select(Sextet.round_id, Sextet.member_count, func.count())
+        .where(Sextet.round_id.in_(ids))
+        .group_by(Sextet.round_id, Sextet.member_count)
+    ):
+        sizes[(rid, size)] = count
     submissions = dict(
         db.execute(
             select(PreferenceSubmission.round_id, func.count())
@@ -51,6 +58,8 @@ def round_views(db, rounds):
             submissions.get(r.id, 0),
             pending.get(r.id, 0),
             now,
+            sizes[(r.id, 6)],
+            sizes[(r.id, 7)],
         )
         for r in rounds
     ]
@@ -60,7 +69,7 @@ def round_view(db, r):
     return round_views(db, [r])[0]
 
 
-def _round_data(r, staff, count, preferences, pending, now):
+def _round_data(r, staff, count, preferences, pending, now, six, seven):
     return {
         "id": r.id,
         "name": r.name,
@@ -88,6 +97,10 @@ def _round_data(r, staff, count, preferences, pending, now):
         "capacity": len(staff) * (2 if r.formation_mode == "TRIOS" else 1),
         "shortfall": max(0, count - len(staff) * (2 if r.formation_mode == "TRIOS" else 1)),
         "pending": pending,
+        "registered_six": six,
+        "registered_seven": seven,
+        "limit_six": 3 if r.formation_mode == "GROUPS" else None,
+        "limit_seven": 8 if r.formation_mode == "GROUPS" else None,
     }
 
 

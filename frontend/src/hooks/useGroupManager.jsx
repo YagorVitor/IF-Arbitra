@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { roundService } from '../services/roundService';
 import { studentService } from '../services/studentService';
 
-export function useTrioManager(currentUser, initialRoundId) {
+export function useGroupManager(currentUser, initialRoundId) {
   const [roundId, setRoundId] = useState(initialRoundId || null);
   const [round, setRound] = useState(null);
   const [existingGroup, setExistingGroup] = useState(null);
@@ -47,8 +47,8 @@ export function useTrioManager(currentUser, initialRoundId) {
     fetchMyGroup();
   }, [roundId, currentUser?.login]);
 
-  const submitTrio = async (memberIds) => {
-    if (round?.formation_mode !== 'TRIOS' || memberIds.length !== 3) { setError('Confirme exatamente três alunos em uma rodada de trios.'); return; }
+  const submitGroup = async (memberIds) => {
+    if (round?.formation_mode !== 'GROUPS' || ![6, 7].includes(memberIds.length)) { setError('Confirme seis integrantes obrigatórios e, se desejar, um sétimo.'); return; }
     if (!round?.registration_open) { setError('A janela de confirmação desta rodada está encerrada.'); return; }
     setIsSubmitting(true); setError('');
     try {
@@ -56,18 +56,18 @@ export function useTrioManager(currentUser, initialRoundId) {
       if (confirmation.current?.signature !== signature) {
         confirmation.current = { signature, key: crypto.randomUUID() };
       }
-      const payload = { name: `Trio de ${currentUser.name.split(' ')[0]}`, members: memberIds, idempotency_key: confirmation.current.key };
-      const createdGroup = await roundService.createTrio(roundId, payload);
+      const payload = { name: `Grupo de ${currentUser.name.split(' ')[0]}`, members: memberIds, idempotency_key: confirmation.current.key };
+      const createdGroup = await roundService.createGroup(roundId, payload);
       setExistingGroup(createdGroup);
     } catch (err) {
       if (err.code === 'STUDENT_ALREADY_IN_SEXTET') {
         const existing = await roundService.getMyGroup(roundId).catch(() => null);
         if (existing) { setExistingGroup(existing); return; }
       }
-      const messages = { INTEGRITY_CONFLICT: 'Um dos integrantes já pertence a outro grupo ativo.', STUDENT_ALREADY_IN_SEXTET: 'Um dos integrantes já pertence a outro grupo ativo.', REGISTRATION_WINDOW_CLOSED: 'A janela de confirmação desta rodada foi encerrada.', IDEMPOTENCY_CONFLICT: 'Esta confirmação já foi usada com outra composição.', INVALID_SEXTET_COMPOSITION: 'O trio deve ter exatamente três alunos ativos.', INVALID_TRIO_COMPOSITION: 'O trio deve ter exatamente três alunos.', DUPLICATE_MEMBER: 'Selecione alunos diferentes.' };
+      const messages = { INTEGRITY_CONFLICT: 'Um dos integrantes já pertence a outro grupo ativo.', STUDENT_ALREADY_IN_SEXTET: 'Um dos integrantes já pertence a outro grupo ativo.', REGISTRATION_WINDOW_CLOSED: 'A janela de confirmação desta rodada foi encerrada.', IDEMPOTENCY_CONFLICT: 'Esta confirmação já foi usada com outra composição.', INVALID_SEXTET_COMPOSITION: 'Selecione apenas alunos ativos.', INVALID_GROUP_COMPOSITION: 'Confirme seis integrantes, incluindo o capitão, e um sétimo opcional.', DUPLICATE_MEMBER: 'Selecione alunos diferentes.' };
       setError(messages[err.code] || err.message || 'Falha ao confirmar o grupo.');
     } finally { setIsSubmitting(false); }
   };
 
-  return { round, existingGroup, isOccupiedGlobally, isLoading, isSubmitting, error, setError, submitTrio };
+  return { round, existingGroup, isOccupiedGlobally, isLoading, isSubmitting, error, setError, submitGroup };
 }
