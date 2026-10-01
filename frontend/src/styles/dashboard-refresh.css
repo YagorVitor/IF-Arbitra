@@ -78,3 +78,5 @@
 .app-member>svg{flex:none;color:#886411}
 @media(min-width:1500px){.app-sidebar{width:256px;padding:30px 20px}.app-main{padding-top:36px}.app-admin-metrics{grid-template-columns:repeat(5,minmax(0,1fr))}}
 @media(max-width:760px){.app-topbar{top:0}.app-sidebar{display:none}.app-main{padding:22px 16px calc(105px + env(safe-area-inset-bottom))}.app-frame{min-height:calc(100dvh - 70px)}.app-member{padding:13px;gap:10px}.app-section-head h2,.app-section-head h3{font-size:16px}.app-section-head p,.app-feature-info p{font-size:13px}}
+
+.app-shell input.app-student-search{padding-inline-start:40px;padding-inline-end:12px}

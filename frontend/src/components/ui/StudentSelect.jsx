@@ -80,7 +80,7 @@ export function StudentSelect({ label, value, onChange, icon }) {
 
       {value ? (
         <div className="flex items-center justify-between px-3 py-2 border border-green-200 bg-green-50 rounded-md text-[13px]">
-          <div className="flex flex-col">
+          <div className="flex min-w-0 flex-col break-words">
             <span className="font-medium text-gray-900">
               {value.name}
             </span>
@@ -94,7 +94,7 @@ export function StudentSelect({ label, value, onChange, icon }) {
             type="button"
             onClick={() => onChange(null)}
             aria-label={`Remover ${value.name}`}
-            className="text-gray-400 hover:text-red-500 font-bold p-1"
+            className="shrink-0 text-gray-400 hover:text-red-500 font-bold p-1"
             title="Remover"
           >
             ✕
@@ -109,7 +109,7 @@ export function StudentSelect({ label, value, onChange, icon }) {
             role="combobox"
             aria-expanded={isOpen && query.length >= 2}
             aria-autocomplete="list"
-            className="w-full px-3 py-2 pl-9 border border-gray-300 rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-[#0A3D2A] focus:border-[#0A3D2A] placeholder-gray-400"
+            className="app-student-search w-full border border-gray-300 rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-[#0A3D2A] focus:border-[#0A3D2A] placeholder-gray-400"
             placeholder="Buscar aluno por nome ou e-mail..."
             value={query}
             onChange={(event) => {
@@ -120,7 +120,8 @@ export function StudentSelect({ label, value, onChange, icon }) {
           />
 
           <Search
-            className="absolute left-3 top-2.5 text-gray-400"
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
             size={16}
           />
 
@@ -144,7 +145,7 @@ export function StudentSelect({ label, value, onChange, icon }) {
                         : 'hover:bg-green-50 cursor-pointer'
                     } w-full text-left`}
                   >
-                    <div className="flex flex-col">
+                    <div className="flex min-w-0 flex-col break-words">
                       <span className="text-[13px] font-medium text-gray-900">
                         {student.name}
                       </span>
