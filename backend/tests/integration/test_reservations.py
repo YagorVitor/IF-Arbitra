@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import select
 
 from app.commands.verify_run import verify
-from app.db.models import AllocationRound, AuditEvent, StaffReservation, User
+from app.db.models import AllocationRound, AuditEvent, RoundStaff, StaffReservation, User
 from tests.support import as_user
 
 pytestmark = pytest.mark.integration
@@ -13,7 +13,25 @@ pytestmark = pytest.mark.integration
 
 def prepare(world):
     with world.db.begin() as db:
-        db.get(AllocationRound, world.round.id).formation_mode = "GROUPS"
+        round_ = AllocationRound(
+            name="Rodada de reservas",
+            formation_mode="GROUPS",
+            registration_opens_at=world.round.registration_opens_at,
+            registration_closes_at=world.round.registration_closes_at,
+            preferences_open_at=world.round.preferences_open_at,
+            preferences_close_at=world.round.preferences_close_at,
+        )
+        db.add(round_)
+        db.flush()
+        db.add_all(
+            [
+                RoundStaff(round_id=round_.id, staff_id=s.id, order=i)
+                for i, s in enumerate(world.staff)
+            ]
+        )
+        db.flush()
+        round_.status = "OPEN"
+        world.round = round_
         for index, user in enumerate(world.users):
             db.get(User, user.id).is_captain = index in {0, 6, 12}
 
