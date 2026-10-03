@@ -21,6 +21,7 @@ def verify(db, run_id: UUID) -> int:
         "serial-priority-v1": allocate,
         "trio-preference-pairs-v1": allocate_trios,
         "group-preference-passes-v1": allocate_groups,
+        "group-reservations-v2": allocate_groups,
     }
     if run.algorithm_version not in algorithms:
         raise ValueError("Versão do algoritmo não suportada por este verificador.")
@@ -39,7 +40,15 @@ def verify(db, run_id: UUID) -> int:
         )
         for g in snapshot["groups"]
     ]
-    expected = algorithms[run.algorithm_version](candidates, snapshot["staff_order"])
+    expected = (
+        allocate_groups(
+            candidates,
+            snapshot["staff_order"],
+            {r["sextet_id"]: r["staff_id"] for r in snapshot["reservations"]},
+        )
+        if run.algorithm_version == "group-reservations-v2"
+        else algorithms[run.algorithm_version](candidates, snapshot["staff_order"])
+    )
     persisted = {
         str(a.sextet_id): {
             "sextet_id": str(a.sextet_id),
@@ -47,7 +56,11 @@ def verify(db, run_id: UUID) -> int:
             **(
                 {"staff_slot": a.staff_slot}
                 if run.algorithm_version
-                in {"trio-preference-pairs-v1", "group-preference-passes-v1"}
+                in {
+                    "trio-preference-pairs-v1",
+                    "group-preference-passes-v1",
+                    "group-reservations-v2",
+                }
                 else {}
             ),
             "kind": a.kind,

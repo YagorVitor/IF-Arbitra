@@ -194,13 +194,28 @@ def allocate_trios(candidates: list[Candidate], staff_order: list[str]) -> list[
     return result
 
 
-def allocate_groups(candidates: list[Candidate], staff_order: list[str]) -> list[dict]:
+def allocate_groups(
+    candidates: list[Candidate], staff_order: list[str], reservations: dict[str, str] | None = None
+) -> list[dict]:
     """One group per server: all first choices, then second choices, temporal ties."""
     allocate(candidates, staff_order)  # Validate the complete frozen input.
     priority = sorted(candidates, key=lambda c: (c.registered_at, c.sequence))
+    reservations = reservations or {}
+    if not set(reservations).issubset({c.id for c in candidates}):
+        raise ValueError("Reservation must reference a registered group")
+    if not set(reservations.values()).issubset(staff_order):
+        raise ValueError("Reserved staff must be eligible")
+    if len(set(reservations.values())) != len(reservations):
+        raise ValueError("Reserved staff must be unique")
     chosen = {}
     used = {}
     ordered = []
+    for candidate in priority:
+        if candidate.id in reservations:
+            staff_id = reservations[candidate.id]
+            chosen[candidate.id] = (staff_id, None)
+            used[staff_id] = candidate.id
+            ordered.append(candidate)
     for position in range(len(staff_order)):
         for candidate in priority:
             if candidate.id in chosen or not candidate.preferences:
@@ -235,7 +250,9 @@ def allocate_groups(candidates: list[Candidate], staff_order: list[str]) -> list
                 "fallback_order": staff_order if not c.preferences else [],
                 "unavailable": [],
                 "chosen": chosen.get(c.id, (None, None))[0],
-                "reason": "PREFERENCE_PASS"
+                "reason": "ADMIN_RESERVED"
+                if c.id in reservations
+                else "PREFERENCE_PASS"
                 if c.id in chosen and c.preferences
                 else "FALLBACK"
                 if c.id in chosen

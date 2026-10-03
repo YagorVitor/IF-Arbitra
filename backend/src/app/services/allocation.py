@@ -12,6 +12,8 @@ from app.db.models import (
     InstitutionalStaff,
     PreferenceItem,
     Sextet,
+    StaffReservation,
+    User,
 )
 from app.db.session import database_now
 from app.domain.allocation import Candidate, allocate, allocate_groups, allocate_trios
@@ -39,6 +41,34 @@ def process_allocation(db, request, round_id, user):
         )
     )
     staff = eligible_staff(db, round_id)
+    reservations = []
+    if round_.formation_mode == "GROUPS":
+        group_by_captain = {g.created_by: g for g in groups}
+        for reservation in db.scalars(
+            select(StaffReservation)
+            .join(User, User.id == StaffReservation.captain_id)
+            .where(User.is_captain, User.removed_at.is_(None))
+            .order_by(StaffReservation.captain_id)
+        ):
+            group = group_by_captain.get(reservation.captain_id)
+            if not group:
+                continue  # Without a confirmed group, the staff remains available.
+            if reservation.staff_id not in staff:
+                raise DomainError(
+                    "RESERVED_STAFF_NOT_ELIGIBLE",
+                    "Uma reserva administrativa exige um servidor ausente desta rodada. Revise a reserva antes de processar.",
+                    409,
+                )
+            reservations.append(
+                {
+                    "sextet_id": str(group.id),
+                    "captain_id": str(reservation.captain_id),
+                    "staff_id": str(reservation.staff_id),
+                    "reason": reservation.reason,
+                    "updated_by": str(reservation.updated_by),
+                    "updated_at": reservation.updated_at.isoformat(),
+                }
+            )
     items = db.execute(
         select(PreferenceItem.sextet_id, PreferenceItem.staff_id)
         .where(PreferenceItem.round_id == round_id)
@@ -76,10 +106,12 @@ def process_allocation(db, request, round_id, user):
             for c, g in zip(candidates, groups, strict=True)
         ],
     }
+    if round_.formation_mode == "GROUPS":
+        snapshot["reservations"] = reservations
     run = AllocationRun(
         round_id=round_id,
         status="PROCESSING",
-        algorithm_version="group-preference-passes-v1"
+        algorithm_version="group-reservations-v2"
         if round_.formation_mode == "GROUPS"
         else "trio-preference-pairs-v1"
         if round_.formation_mode == "TRIOS"
@@ -107,7 +139,16 @@ def process_allocation(db, request, round_id, user):
         if round_.formation_mode == "TRIOS"
         else allocate
     )
-    for result in algorithm(candidates, [str(s) for s in staff]):
+    results = (
+        allocate_groups(
+            candidates,
+            [str(s) for s in staff],
+            {r["sextet_id"]: r["staff_id"] for r in reservations},
+        )
+        if round_.formation_mode == "GROUPS"
+        else algorithm(candidates, [str(s) for s in staff])
+    )
+    for result in results:
         db.add(
             Allocation(
                 run_id=run.id,

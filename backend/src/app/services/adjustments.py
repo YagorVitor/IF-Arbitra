@@ -29,7 +29,7 @@ def effective_allocations(db, round_ids, adjustments=None):
         values = {
             column.name: getattr(allocation, column.name) for column in Allocation.__table__.columns
         }
-        values["manually_adjusted"] = False
+        values["manually_adjusted"] = allocation.trace.get("reason") == "ADMIN_RESERVED"
         adjustment = adjustments.get(allocation.round_id)
         if adjustment:
             assignment = adjustment.assignments[str(allocation.id)]
@@ -43,7 +43,7 @@ def effective_allocations(db, round_ids, adjustments=None):
                 preference_position=ranking.index(str(staff_id)) + 1
                 if str(staff_id) in ranking
                 else None,
-                manually_adjusted=changed,
+                manually_adjusted=changed or allocation.trace.get("reason") == "ADMIN_RESERVED",
                 trace={
                     **allocation.trace,
                     "chosen": str(staff_id) if staff_id else None,

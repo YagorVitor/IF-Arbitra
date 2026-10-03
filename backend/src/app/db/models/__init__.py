@@ -5,6 +5,7 @@ from app.db.models.allocation import Allocation, AllocationRun
 from app.db.models.audit import AuditEvent
 from app.db.models.base import Base
 from app.db.models.preferences import PreferenceItem, PreferenceSubmission
+from app.db.models.reservations import StaffReservation
 from app.db.models.rounds import AllocationRound, RoundStaff
 from app.db.models.sextets import Sextet, SextetMember
 from app.db.models.staff import InstitutionalStaff
@@ -26,4 +27,5 @@ __all__ = [
     "Allocation",
     "AllocationAdjustment",
     "AuditEvent",
+    "StaffReservation",
 ]
