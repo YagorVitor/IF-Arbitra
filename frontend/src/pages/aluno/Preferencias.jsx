@@ -5,6 +5,7 @@ import { usePreferencesManager } from '../../hooks/usePreferencesManager';
 import Alert from '../../components/ui/Alert';
 import PreferenceListItem from '../../components/ui/PreferenceListItem';
 import EmptyRoundState from '../../components/ui/EmptyRoundState';
+import CaptainSteps from '../../components/ui/CaptainSteps';
 
 export default function Preferencias() {
   const { roundId } = useParams();
@@ -18,12 +19,14 @@ export default function Preferencias() {
   if (round && !group && !error) return <div className="app-page"><div className="app-page-head"><div><p className="app-eyebrow">{round.name}</p><h1 className="app-title">Preferências</h1></div></div><section className="app-empty-compact app-card"><span className="app-empty-compact-icon"><UsersRound size={27}/></span><h2>Confirme um {groupName} antes de ordenar servidores.</h2><p>As preferências pertencem ao grupo. Depois que o {groupName} for confirmado, o capitão poderá editar a lista durante o prazo da rodada.</p><Link className="app-button" to={`/aluno/grupo/${round.id}`}>{round.registration_open ? `Formar ${groupName}` : 'Ver informações da rodada'} <ArrowRight size={16}/></Link></section></div>;
 
   return <div className="app-page">
+    <CaptainSteps current={2} groupConfirmed={!!group} preferencesSent={group?.preference_version > 0 && group?.preferences?.length > 0}/>
     <div className="app-page-head"><div><p className="app-eyebrow">Escolha dos servidores</p><h1 className="app-title">Preferências</h1><p className="app-subtitle">Ordene os servidores do mais desejado para o menos desejado.</p></div><span className="app-pill neutral">Versão {group?.preference_version ?? 0}</span></div>
     <div className="app-notice"><strong>Sua prioridade não muda ao editar a lista.</strong>O horário que vale para a prioridade é o da confirmação do {groupName}. {round?.formation_mode === 'TRIOS' && 'O sistema combina dois trios por servidor, começando pela primeira preferência.'}</div>
-    {!preferencesOpen && <Alert variant="warning" title="Janela encerrada">As preferências só podem ser enviadas durante o prazo da rodada.</Alert>}
+    {!preferencesOpen && <Alert variant="warning" title="Envio indisponível neste momento">Seu grupo está confirmado. As preferências só podem ser enviadas durante o período definido pela administração. <Link to={`/aluno?roundId=${round.id}`} className="underline">Acompanhar a rodada</Link></Alert>}
     {!isLeader && <Alert variant="warning">Apenas o capitão do {groupName} pode editar e salvar as preferências.</Alert>}
     {error && <Alert variant="error">{error}</Alert>}
     <section className="app-card"><div className="app-card-pad app-section-head" style={{marginBottom:0,borderBottom:'1px solid var(--line)'}}><div><div className="app-icon-bubble mb-3"><ListOrdered size={20}/></div><h2>Ranking de servidores</h2><p>{staffList.length} servidores posicionados · use as setas para alterar a ordem</p></div></div><ol>{staffList.map((staff,index) => <PreferenceListItem key={staff.id} staff={staff} index={index} totalItems={staffList.length} isLeader={isLeader && preferencesOpen} onMoveUp={moveUp} onMoveDown={moveDown}/>)}</ol></section>
-    <div className="app-confirm-bar"><button type="button" onClick={handleSave} disabled={saving || !isLeader || !preferencesOpen || staffList.length === 0} className="app-button"><Save size={16}/>{saving ? 'Salvando...' : preferencesOpen ? 'Salvar preferências' : 'Preferências encerradas'}</button></div>
+    <p className="app-muted text-sm">Coloque sua primeira escolha no topo. Confira a lista completa e envie para concluir sua participação.</p>
+    <div className="app-confirm-bar"><button type="button" onClick={handleSave} disabled={saving || !isLeader || !preferencesOpen || staffList.length === 0} className="app-button"><Save size={16}/>{saving ? 'Enviando...' : preferencesOpen ? 'Enviar preferências e concluir' : 'Envio indisponível'}</button></div>
   </div>;
 }

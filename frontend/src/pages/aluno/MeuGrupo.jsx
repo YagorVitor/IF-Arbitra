@@ -5,6 +5,7 @@ import { useGroupManager } from '../../hooks/useGroupManager';
 import GroupForm from '../../components/ui/GroupForm';
 import GroupReadOnly from '../../components/ui/GroupReadOnly';
 import EmptyRoundState from '../../components/ui/EmptyRoundState';
+import CaptainSteps from '../../components/ui/CaptainSteps';
 
 export default function MeuGrupo() {
   const navigate = useNavigate();
@@ -31,9 +32,16 @@ export default function MeuGrupo() {
 
   const isReadOnly = !!existingGroup;
   const canRegister = round?.formation_mode === 'GROUPS' && round?.registration_open === true;
+  const preferencesSent = existingGroup?.preference_version > 0 && existingGroup?.preferences?.length > 0;
+
+  async function confirmAndContinue(memberIds) {
+    const confirmed = await submitGroup(memberIds);
+    if (confirmed?.id) navigate(`/aluno/preferencias/${round.id}`);
+  }
 
   return (
     <div className="app-page">
+      <CaptainSteps current={1} groupConfirmed={isReadOnly} preferencesSent={preferencesSent}/>
       <div className="app-page-head">
         <div>
           <p className="app-eyebrow">{round?.name || 'Formação de grupos'}</p><h1 className="app-title">{isReadOnly ? `Meu ${groupName}` : `Formar ${groupName}`}</h1>
@@ -45,10 +53,11 @@ export default function MeuGrupo() {
       {error && <div role="alert" className="mb-6 bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 flex items-center gap-3 text-sm"><AlertCircle className="shrink-0 text-red-600" size={20} /><span>{error}</span></div>}
 
       {isReadOnly ? <GroupReadOnly existingGroup={existingGroup} trioMode={trioMode} /> : canRegister ? (
-        <GroupForm currentUser={currentUser} round={round} onSubmit={submitGroup} isSubmitting={isSubmitting} setError={setError} />
+        <GroupForm currentUser={currentUser} round={round} onSubmit={confirmAndContinue} isSubmitting={isSubmitting} setError={setError} />
       ) : (
         <div className="max-w-3xl bg-amber-50 border border-amber-200 rounded-lg p-6 flex items-start gap-3 text-amber-900"><Clock className="shrink-0 mt-0.5" size={22} /><div><h2 className="font-bold">Confirmação indisponível</h2><p className="text-sm mt-1">{trioMode ? 'A confirmação ficará disponível durante o período de inscrições da rodada.' : 'Esta rodada está disponível para consulta. Aguarde a administração abrir uma nova rodada para confirmar seu grupo.'}</p></div></div>
       )}
+      {isReadOnly && <div className="app-confirm-bar"><button type="button" className="app-button" onClick={() => navigate(preferencesSent ? `/aluno?roundId=${round.id}` : `/aluno/preferencias/${round.id}`)}>{preferencesSent ? 'Ver situação do envio' : 'Continuar para preferências'}</button></div>}
     </div>
   );
 }

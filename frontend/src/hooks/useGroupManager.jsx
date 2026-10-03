@@ -59,10 +59,11 @@ export function useGroupManager(currentUser, initialRoundId) {
       const payload = { name: `Grupo de ${currentUser.name.split(' ')[0]}`, members: memberIds, idempotency_key: confirmation.current.key };
       const createdGroup = await roundService.createGroup(roundId, payload);
       setExistingGroup(createdGroup);
+      return createdGroup;
     } catch (err) {
       if (err.code === 'STUDENT_ALREADY_IN_SEXTET') {
         const existing = await roundService.getMyGroup(roundId).catch(() => null);
-        if (existing) { setExistingGroup(existing); return; }
+        if (existing) { setExistingGroup(existing); return existing; }
       }
       const messages = { CAPTAIN_AS_MEMBER: "Outro capitão não pode ser incluído no seu grupo.", CAPTAIN_REQUIRED: "Somente capitães cadastrados podem confirmar grupos.", INTEGRITY_CONFLICT: 'Um dos integrantes já pertence a outro grupo ativo.', STUDENT_ALREADY_IN_SEXTET: 'Um dos integrantes já pertence a outro grupo ativo.', REGISTRATION_WINDOW_CLOSED: 'A janela de confirmação desta rodada foi encerrada.', IDEMPOTENCY_CONFLICT: 'Esta confirmação já foi usada com outra composição.', INVALID_SEXTET_COMPOSITION: 'Selecione apenas alunos ativos.', INVALID_GROUP_COMPOSITION: 'Confirme seis integrantes, incluindo o capitão, e um sétimo opcional.', DUPLICATE_MEMBER: 'Selecione alunos diferentes.' };
       setError(messages[err.code] || err.message || 'Falha ao confirmar o grupo.');

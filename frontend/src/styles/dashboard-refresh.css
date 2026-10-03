@@ -68,6 +68,17 @@
 .app-section-head p,.app-feature-info p{font-size:14px;line-height:1.55}
 .app-label{font-size:11px}
 .app-round-hero-content{min-width:0}
+.app-captain-steps{grid-template-columns:repeat(3,minmax(0,1fr));list-style:none;margin:0}
+.app-captain-next{display:flex;align-items:flex-start;gap:20px;padding:32px}
+.app-captain-next.is-sent{background:#eff9f3;border-color:#b9dfc9}
+.app-captain-next>.app-icon-bubble{flex-shrink:0}
+.app-captain-next-copy{min-width:0;max-width:680px}
+.app-captain-next h2{font-size:clamp(23px,2.2vw,31px);line-height:1.2;margin:8px 0 12px;font-weight:800;letter-spacing:-.025em}
+.app-captain-next-copy>p:not(.app-label){line-height:1.7;color:var(--muted)}
+.app-captain-next .app-button{margin-top:22px}
+.app-captain-summary{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;color:var(--muted);font-size:13px}
+.app-captain-review{display:flex;flex-wrap:wrap;gap:12px}
+@media(max-width:760px){.app-captain-next{flex-direction:column;padding:22px;gap:14px}.app-captain-next .app-button{width:100%;min-height:48px;text-align:center;white-space:normal}.app-captain-review{flex-direction:column}.app-captain-review .app-button{min-height:44px}.app-captain-steps .app-step strong{font-size:11px}.app-captain-steps .app-step small{font-size:10px}}
 .app-round-hero h1,.app-title{overflow-wrap:anywhere}
 .app-trio-members{width:100%;max-width:880px}
 .app-member-list{display:grid;gap:12px;padding:0;margin:0;list-style:none}

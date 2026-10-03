@@ -25,8 +25,8 @@ export function usePreferencesManager(user, paramRoundId) {
   useEffect(() => {
     const loadPreferences = async () => {
       try {
-        setLoading(true);
-        const targetRound = paramRoundId ? await roundService.getById(paramRoundId) : await roundService.getPreferencesRound();
+        setLoading(true); setError(null);
+        const targetRound = paramRoundId ? await roundService.getById(paramRoundId) : await roundService.getActiveRound();
         if (!targetRound) { setRound(null); return; }
         const groupData = await roundService.getMyGroup(targetRound.id);
         if (!groupData) { setRound(targetRound); setGroup(null); setStaffList([]); return; }
@@ -42,12 +42,12 @@ export function usePreferencesManager(user, paramRoundId) {
   const isLeader = group?.members?.[0]?.id === user?.id;
 
   const handleSave = async () => {
-    if (!group || !isLeader || !round?.preferences_open) return;
+    if (saving || !group || !isLeader || !round?.preferences_open || !staffList.length) return;
     try {
       setSaving(true); setError(null);
       const responseData = await groupService.updatePreferences(group.id, { staff_ids: staffList.map((staff) => staff.id), expected_version: group.preference_version });
       setGroup((prev) => ({ ...prev, preference_version: responseData.version }));
-      toast.success('Preferências salvas com sucesso.');
+      toast.success('Preferências enviadas. Agora é só aguardar o resultado.');
       navigate(`/aluno${round.id ? `?roundId=${round.id}` : ''}`);
     } catch (err) {
       if (err.code === 'PREFERENCE_VERSION_CONFLICT') setError('As preferências foram alteradas em outra aba. Recarregue a página antes de salvar.');

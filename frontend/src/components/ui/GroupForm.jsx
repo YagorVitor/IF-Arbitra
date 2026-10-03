@@ -50,7 +50,7 @@ export default function GroupForm({ currentUser, round, onSubmit, isSubmitting, 
             Cancelar
           </button>
           <button type="button" disabled={isSubmitting} onClick={handleConfirm} className="app-button">
-            {isSubmitting ? 'Confirmando...' : 'Confirmar grupo'}
+            {isSubmitting ? 'Confirmando...' : 'Confirmar grupo e continuar'}
           </button>
         </div>
       </div>

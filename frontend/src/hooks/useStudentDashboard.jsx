@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { roundService } from '../services/roundService';
 import { format, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useSearchParams } from 'react-router-dom';
 
 export function useStudentDashboard() {
+  const [searchParams] = useSearchParams();
+  const roundId = searchParams.get('roundId');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [round, setRound] = useState(null);
@@ -13,7 +16,8 @@ export function useStudentDashboard() {
     async function loadDashboardData() {
       try {
         setLoading(true);
-        const activeRound = await roundService.getActiveRound();
+        setError(null);
+        const activeRound = roundId ? await roundService.getById(roundId) : await roundService.getActiveRound();
         
         if (!activeRound) { setRound(null); setGroup(null); return; }
 
@@ -27,7 +31,7 @@ export function useStudentDashboard() {
     }
 
     loadDashboardData();
-  }, []);
+  }, [roundId]);
 
   const getCurrentStage = () => {
     if (!round) return 1;
