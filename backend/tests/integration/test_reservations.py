@@ -11,7 +11,7 @@ from tests.support import as_user
 pytestmark = pytest.mark.integration
 
 
-def prepare(world):
+def prepare(world, excluded_staff=None):
     with world.db.begin() as db:
         round_ = AllocationRound(
             name="Rodada de reservas",
@@ -27,6 +27,7 @@ def prepare(world):
             [
                 RoundStaff(round_id=round_.id, staff_id=s.id, order=i)
                 for i, s in enumerate(world.staff)
+                if s.id != excluded_staff
             ]
         )
         db.flush()
@@ -61,7 +62,12 @@ def group(client, world, start):
     assert (
         client.put(
             f"/api/sextets/{gid}/preferences",
-            json={"staff_ids": [str(s.id) for s in world.staff], "expected_version": 0},
+            json={
+                "staff_ids": [
+                    s["id"] for s in client.get(f"/api/rounds/{world.round.id}").json()["staff"]
+                ],
+                "expected_version": 0,
+            },
         ).status_code
         == 200
     )
@@ -138,3 +144,19 @@ def test_no_group_releases_staff_and_reservation_persists(world, client, monkeyp
     with world.db() as db:
         assert db.get(StaffReservation, world.users[6].id)
         assert verify(db, UUID(run.json()["id"])) == 1
+
+
+def test_missing_reserved_staff_blocks_processing_without_fallback(world, client, monkeypatch):
+    prepare(world, excluded_staff=world.staff[0].id)
+    as_user(client, world.admin)
+    assert reservation(client, world).status_code == 204
+    group(client, world, 6)
+    monkeypatch.setattr(
+        "app.services.allocation.database_now",
+        lambda db: world.round.preferences_close_at + timedelta(seconds=1),
+    )
+    as_user(client, world.admin)
+    response = client.post(f"/api/admin/rounds/{world.round.id}/allocate")
+    assert response.status_code == 409
+    assert response.json()["code"] == "RESERVED_STAFF_NOT_ELIGIBLE"
+    assert client.get(f"/api/rounds/{world.round.id}/results").json()["allocations"] == []
