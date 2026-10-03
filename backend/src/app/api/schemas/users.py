@@ -17,6 +17,12 @@ class LoginInput(Input):
 class UserInput(Input):
     name: Name
     email: EmailStr
+    is_captain: bool = False
+    phone: Annotated[str, Field(max_length=32)] | None = None
+
+
+class CaptainInput(Input):
+    is_captain: bool
 
 
 class CredentialDeliveryFailure(BaseModel):
@@ -38,6 +44,7 @@ class UserOut(BaseModel):
     name: str
     login: str
     role: str
+    is_captain: bool
 
 
 class StudentAccessOut(BaseModel):
@@ -53,6 +60,8 @@ class AdminStudentOut(BaseModel):
     active: bool
     removed_at: datetime | None
     credentials_issued: bool
+    is_captain: bool
+    phone: str | None
 
 
 class StudentSearchOut(BaseModel):

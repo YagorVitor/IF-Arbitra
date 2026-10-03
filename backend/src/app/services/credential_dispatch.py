@@ -55,6 +55,7 @@ def _deliver_one(request, user_id, dispatch_id) -> str:
             .where(
                 User.id == user_id,
                 User.role == "STUDENT",
+                User.is_captain,
                 User.active.is_(False),
                 User.password_hash.is_(None),
                 User.email.is_not(None),
@@ -94,6 +95,7 @@ def dispatch_credentials(request) -> dict:
             select(User.id, User.email)
             .where(
                 User.role == "STUDENT",
+                User.is_captain,
                 User.active.is_(False),
                 User.password_hash.is_(None),
                 User.email.is_not(None),
@@ -136,6 +138,7 @@ def dispatch_credentials(request) -> dict:
             .select_from(User)
             .where(
                 User.role == "STUDENT",
+                User.is_captain,
                 User.active.is_(False),
                 User.password_hash.is_(None),
                 User.email.is_not(None),

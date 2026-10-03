@@ -22,6 +22,10 @@ def current_user(request: Request) -> User:
         if not user:
             raise DomainError("AUTH_REQUIRED", "Entre para acessar o processo.", 401)
         request.state.actor_id = user.id
+        if user.role != "ADMIN" and not user.is_captain:
+            raise DomainError(
+                "CAPTAIN_REQUIRED", "O acesso é exclusivo dos capitães e da administração.", 403
+            )
         return user
 
 

@@ -16,6 +16,12 @@ def test_full_74_student_round_enforces_sizes_captain_quotas_and_unique_servers(
     with world.db.begin() as db:
         extra = [InstitutionalStaff(name=f"Servidor extra {i}") for i in range(8)]
         db.add_all(extra)
+    with world.db.begin() as db:
+        from app.db.models import User
+
+        captains = {0, 7, 14, 21, 28, 35, 42, 49, 56, 62, 68, 74}
+        for index, student in enumerate(world.users):
+            db.get(User, student.id).is_captain = index in captains
     staff = [*world.staff, *extra]
     as_user(client, world.admin)
     created = client.post(

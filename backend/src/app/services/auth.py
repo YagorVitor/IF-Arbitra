@@ -60,6 +60,10 @@ def authenticate(request, login, password):
             if not valid:
                 raise DomainError("INVALID_CREDENTIALS", "Identificador ou senha incorretos.", 401)
             request.state.actor_id = user.id
+            if user.role != "ADMIN" and not user.is_captain:
+                raise DomainError(
+                    "CAPTAIN_REQUIRED", "O acesso é exclusivo dos capitães e da administração.", 403
+                )
             if hasher.check_needs_rehash(user.password_hash):
                 user.password_hash = hasher.hash(password)
             now = database_now(db)

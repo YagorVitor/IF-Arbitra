@@ -36,7 +36,12 @@ def world():
     with SessionFactory.begin() as db:
         password_hash = hasher.hash("testing-password-2026")
         users = [
-            User(name=f"Aluno teste {i:02}", login=f"student{i}", password_hash=password_hash)
+            User(
+                name=f"Aluno teste {i:02}",
+                login=f"student{i}",
+                password_hash=password_hash,
+                is_captain=True,
+            )
             for i in range(90)
         ]
         admin = User(name="Admin teste", login="admin", role="ADMIN", password_hash=password_hash)

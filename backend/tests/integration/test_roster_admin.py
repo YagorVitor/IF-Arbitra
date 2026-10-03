@@ -26,7 +26,8 @@ def test_student_removal_skips_dispatch_and_readdition_issues_new_credentials(
     )
     as_user(client, world.admin)
     response = client.post(
-        "/api/admin/students", json={"name": "Aluno Adicional", "email": "extra@example.org"}
+        "/api/admin/students",
+        json={"is_captain": True, "name": "Aluno Adicional", "email": "extra@example.org"},
     )
     assert response.status_code == 201, response.text
     student_id = response.json()["id"]
@@ -39,7 +40,8 @@ def test_student_removal_skips_dispatch_and_readdition_issues_new_credentials(
     assert client.post("/api/admin/students/dispatch-credentials").json()["eligible"] == 0
     assert not sent
     restored = client.post(
-        "/api/admin/students", json={"name": "Nome Corrigido", "email": "EXTRA@example.org"}
+        "/api/admin/students",
+        json={"is_captain": True, "name": "Nome Corrigido", "email": "EXTRA@example.org"},
     )
     assert restored.status_code == 201, restored.text
     assert restored.json()["id"] == student_id

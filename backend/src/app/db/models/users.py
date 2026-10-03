@@ -24,6 +24,8 @@ class User(Base):
     email: Mapped[str | None] = mapped_column(String(254), unique=True)
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     password_hash: Mapped[str | None] = mapped_column(String(255))
+    is_captain: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    phone: Mapped[str | None] = mapped_column(String(32))
     role: Mapped[str] = mapped_column(String(16), default="STUDENT")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     removed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

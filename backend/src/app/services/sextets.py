@@ -31,6 +31,10 @@ def register_sextet(db, request, round_id, user, data):
             )
         return prior
     assert_window(db, round_, "registration")
+    if round_.formation_mode == "GROUPS" and not user.is_captain:
+        raise DomainError(
+            "CAPTAIN_REQUIRED", "Somente capitães cadastrados podem confirmar grupos.", 403
+        )
     if user.role != "STUDENT" or data.members[0] != user.id:
         raise DomainError(
             "NOT_SEXTET_LEADER", "O primeiro integrante deve ser o aluno autenticado.", 403
@@ -71,7 +75,6 @@ def register_sextet(db, request, round_id, user, data):
             select(User)
             .where(
                 User.id.in_(data.members),
-                User.active,
                 User.removed_at.is_(None),
                 User.role == "STUDENT",
             )
@@ -81,7 +84,24 @@ def register_sextet(db, request, round_id, user, data):
     )
     if len(students) != len(data.members):
         raise DomainError(
-            "INVALID_SEXTET_COMPOSITION", "Todos os integrantes devem ser alunos ativos.", 422
+            "INVALID_SEXTET_COMPOSITION",
+            "Todos os integrantes devem constar na lista de alunos, sem cadastro removido.",
+            422,
+        )
+    if (
+        round_.formation_mode == "GROUPS"
+        and not next(s for s in students if s.id == user.id).is_captain
+    ):
+        raise DomainError(
+            "CAPTAIN_REQUIRED", "Somente capitães cadastrados podem confirmar grupos.", 403
+        )
+    if round_.formation_mode == "GROUPS" and any(
+        s.is_captain and s.id != user.id for s in students
+    ):
+        raise DomainError(
+            "CAPTAIN_AS_MEMBER",
+            "Outro capitão não pode ser incluído como integrante do seu grupo.",
+            409,
         )
     sextet = Sextet(
         round_id=round_id,

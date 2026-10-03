@@ -62,3 +62,12 @@ Um aluno participa de no máximo um grupo ativo, inclusive entre rodadas. A prio
 A lista de servidores vigente em 01/10/2026 é Anderson, Carina, Carol Barra, Dione, Guilherme, Jurandyr, Mauro, Raphael Zambon, Renata, Rita e Rosana. Os cadastros antigos que não constam nesta lista ficam inativos para novas rodadas; as referências históricas são preservadas. Servidores podem ser cadastrados sem e-mail quando essa informação ainda não foi fornecida.
 
 Alteração/cancelamento de sextetos, capacidade maior que um e SSO dependem das decisões institucionais registradas na revisão. Nenhuma dessas políticas foi presumida nesta entrega.
+
+
+### Acesso dos capitães
+
+Somente a administração e alunos identificados como capitães podem entrar. Os demais alunos constam na lista de integrantes, mesmo sem credenciais, e não podem abrir sessões. Capitães não aparecem na busca de integrantes e a API rejeita sua inclusão no grupo de outro capitão. Os grupos continuam com seis integrantes obrigatórios, incluindo o capitão, e um sétimo opcional.
+
+Em **Cadastros**, marque o capitão ao criar um aluno ou use **Definir capitão** num cadastro existente. Apenas capitães podem receber credenciais. A alteração dessa função invalida senhas e sessões anteriores e exige gerar um novo acesso. Não é permitida a alteração da função durante participação em grupo ativo.
+
+A migration `0013_captain_access` deixa alunos existentes como integrantes e encerra suas sessões. A administração deve identificar os capitães antes de entregar seus acessos. O cadastro administrativo e o histórico das rodadas são preservados.

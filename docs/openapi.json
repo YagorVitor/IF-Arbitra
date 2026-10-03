@@ -72,6 +72,10 @@
             "title": "Id",
             "type": "string"
           },
+          "is_captain": {
+            "title": "Is Captain",
+            "type": "boolean"
+          },
           "login": {
             "title": "Login",
             "type": "string"
@@ -79,6 +83,17 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
           },
           "removed_at": {
             "anyOf": [
@@ -100,7 +115,9 @@
           "email",
           "active",
           "removed_at",
-          "credentials_issued"
+          "credentials_issued",
+          "is_captain",
+          "phone"
         ],
         "title": "AdminStudentOut",
         "type": "object"
@@ -561,6 +578,20 @@
           "events"
         ],
         "title": "AuditPageOut",
+        "type": "object"
+      },
+      "CaptainInput": {
+        "additionalProperties": false,
+        "properties": {
+          "is_captain": {
+            "title": "Is Captain",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "is_captain"
+        ],
+        "title": "CaptainInput",
         "type": "object"
       },
       "CredentialDeliveryFailure": {
@@ -1378,11 +1409,28 @@
             "title": "Email",
             "type": "string"
           },
+          "is_captain": {
+            "default": false,
+            "title": "Is Captain",
+            "type": "boolean"
+          },
           "name": {
             "maxLength": 160,
             "minLength": 2,
             "title": "Name",
             "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
           }
         },
         "required": [
@@ -1398,6 +1446,10 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "is_captain": {
+            "title": "Is Captain",
+            "type": "boolean"
           },
           "login": {
             "title": "Login",
@@ -1416,7 +1468,8 @@
           "id",
           "name",
           "login",
-          "role"
+          "role",
+          "is_captain"
         ],
         "title": "UserOut",
         "type": "object"
@@ -3851,6 +3904,159 @@
           }
         },
         "summary": "Issue Student Access",
+        "tags": [
+          "Administração"
+        ]
+      }
+    },
+    "/api/admin/students/{student_id}/captain": {
+      "put": {
+        "operationId": "set_captain_api_admin_students__student_id__captain_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "student_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Student Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaptainInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "405": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Method Not Allowed"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Set Captain",
         "tags": [
           "Administração"
         ]

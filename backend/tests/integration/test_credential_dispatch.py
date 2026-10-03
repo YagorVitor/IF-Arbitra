@@ -37,7 +37,9 @@ def test_admin_dispatches_equal_length_credentials_once(world, client, monkeypat
     configured(monkeypatch, sent)
     as_user(client, world.admin)
     for address in ("Primeiro@Example.org", "segundo@example.org"):
-        created = client.post("/api/admin/students", json={"name": "Aluno Novo", "email": address})
+        created = client.post(
+            "/api/admin/students", json={"is_captain": True, "name": "Aluno Novo", "email": address}
+        )
         assert created.status_code == 201, created.text
         assert created.json()["login"] == address.casefold()
     client.cookies.clear()
@@ -79,7 +81,8 @@ def test_failed_delivery_remains_pending_and_can_be_retried(world, client, monke
     configured(monkeypatch, sent)
     as_user(client, world.admin)
     student_id = client.post(
-        "/api/admin/students", json={"name": "Aluno Novo", "email": "retry@example.org"}
+        "/api/admin/students",
+        json={"is_captain": True, "name": "Aluno Novo", "email": "retry@example.org"},
     ).json()["id"]
     original = __import__("app.services.credential_dispatch", fromlist=["_send_credentials"])
 
@@ -118,6 +121,7 @@ def test_legacy_pending_login_becomes_email_on_dispatch(world, client, monkeypat
         db.add(
             User(
                 name="Aluno antigo",
+                is_captain=True,
                 login="legacy-login",
                 email="legacy@example.org",
                 password_hash=None,

@@ -7,6 +7,7 @@ from sqlalchemy import delete, select
 from app.api.dependencies import admin, current_user
 from app.api.schemas.users import (
     AdminStudentOut,
+    CaptainInput,
     CredentialDispatchOut,
     StudentAccessOut,
     StudentSearchOut,
@@ -65,6 +66,10 @@ def issue_student_access(student_id: UUID, request: Request, user=Depends(admin)
             raise DomainError(
                 "STUDENT_NOT_FOUND", "Aluno não encontrado. Restaure o cadastro antes.", 404
             )
+        if not student.is_captain:
+            raise DomainError(
+                "CAPTAIN_REQUIRED", "Somente capitães recebem credenciais de acesso.", 403
+            )
         password = secrets.token_urlsafe(16)
         student.password_hash = hasher.hash(password)
         student.active = True
@@ -97,6 +102,8 @@ def admin_students(include_removed: bool = False, user=Depends(admin)):
                 "active": student.active,
                 "removed_at": student.removed_at,
                 "credentials_issued": student.password_hash is not None,
+                "is_captain": student.is_captain,
+                "phone": student.phone,
             }
             for student in rows
         ]
@@ -118,7 +125,8 @@ def students(q: str = Query(min_length=2, max_length=100), user=Depends(current_
                     .label("occupied"),
                 )
                 .where(
-                    User.active,
+                    User.removed_at.is_(None),
+                    User.is_captain.is_(False),
                     User.role == "STUDENT",
                     (User.name.ilike(f"%{term}%") | User.login.ilike(f"%{term}%")),
                 )
@@ -140,6 +148,8 @@ def create_student(data: UserInput, request: Request, user=Depends(admin)):
             if existing.role != "STUDENT" or existing.removed_at is None:
                 raise DomainError("EMAIL_ALREADY_EXISTS", "Este e-mail já está cadastrado.", 409)
             previous = {"name": existing.name, "removed_at": existing.removed_at.isoformat()}
+            existing.is_captain = data.is_captain
+            existing.phone = data.phone
             existing.name = data.name
             existing.login = address
             existing.active = False
@@ -160,6 +170,8 @@ def create_student(data: UserInput, request: Request, user=Depends(admin)):
             return existing
         student = User(
             name=data.name,
+            is_captain=data.is_captain,
+            phone=data.phone,
             login=address,
             email=address,
             password_hash=None,
@@ -221,3 +233,42 @@ def remove_student(student_id: UUID, request: Request, user=Depends(admin)):
 )
 def dispatch_student_credentials(request: Request, user=Depends(admin)):
     return dispatch_credentials(request)
+
+
+@router.put("/admin/students/{student_id}/captain", response_model=UserOut, tags=["Administração"])
+def set_captain(student_id: UUID, data: CaptainInput, request: Request, user=Depends(admin)):
+    with SessionFactory.begin() as db:
+        student = db.scalar(
+            select(User).where(User.id == student_id, User.role == "STUDENT").with_for_update()
+        )
+        if not student or student.removed_at is not None:
+            raise DomainError("STUDENT_NOT_FOUND", "Aluno não encontrado.", 404)
+        if student.is_captain == data.is_captain:
+            return student
+        membership = db.scalar(
+            select(SextetMember)
+            .where(SextetMember.user_id == student.id, SextetMember.active)
+            .limit(1)
+        )
+        if membership:
+            raise DomainError(
+                "STUDENT_IN_SEXTET",
+                "Arquive a rodada antes de alterar a função de um integrante.",
+                409,
+            )
+        before = {"is_captain": student.is_captain}
+        student.is_captain = data.is_captain
+        student.active = False
+        student.password_hash = None
+        db.execute(delete(LoginSession).where(LoginSession.user_id == student.id))
+        record(
+            db,
+            request,
+            Event.ADMIN,
+            student.id,
+            {"action": "CAPTAIN_CHANGED"},
+            before=before,
+            after={"is_captain": student.is_captain},
+            entity_type="USER",
+        )
+        return student
