@@ -24,9 +24,14 @@ from app.db.models import (
     User,
 )
 from app.db.session import SessionFactory, database_now
-from app.services.credential_dispatch import dispatch_credentials
+from app.services.credential_dispatch import dispatch_credentials, send_test_email
 
 router = APIRouter()
+
+
+@router.post("/admin/email/test", tags=["Administração"])
+def test_email(request: Request, user=Depends(admin)) -> dict[str, str | bool]:
+    return send_test_email(request, user)
 
 
 @router.post("/admin/students/{student_id}/restore", response_model=UserOut, tags=["Administração"])

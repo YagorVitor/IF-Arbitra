@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { adminService } from '../../services/adminService';
-import StaffReservations from '../../components/admin/StaffReservations';
 
 function errorText(error) {
   return `${error.message || 'Não foi possível concluir a operação.'}${error.request_id ? ` Código: ${error.request_id}` : ''}`;
@@ -118,7 +117,6 @@ export default function AdminCadastros() {
       {notice && <div role="status" className="p-3 rounded bg-green-50 text-green-800 border border-green-200">{notice}</div>}
       {access && <section className="app-card app-card-pad space-y-2" aria-label="Acesso gerado"><h2 className="font-semibold">Acesso para entrega manual</h2><p className="text-sm">Copie os dados antes de fechar. A senha não poderá ser consultada novamente.</p><p className="break-all text-sm">Login: <code>{access.login}</code></p><p className="break-all text-sm">Senha: <code>{access.password}</code></p><button type="button" className="app-button secondary" onClick={() => setAccess(null)}>Fechar acesso</button></section>}
       {loading ? <p>Carregando cadastros...</p> : <>
-        <StaffReservations students={students} staff={staff}/>
         <section className="app-card app-card-pad space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>

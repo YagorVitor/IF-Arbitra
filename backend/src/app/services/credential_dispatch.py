@@ -34,6 +34,11 @@ def _send_credentials(email: str, password: str, name: str):
         frontend_url=config.frontend_url,
         sender=config.smtp_from,
     )
+    _send_message(message)
+
+
+def _send_message(message):
+    config = settings()
     try:
         with smtplib.SMTP(config.smtp_host, config.smtp_port, timeout=5) as smtp:
             if config.smtp_starttls:
@@ -43,6 +48,32 @@ def _send_credentials(email: str, password: str, name: str):
             smtp.send_message(message)
     except (OSError, smtplib.SMTPException) as exc:
         raise DomainError("EMAIL_UNAVAILABLE", "Falha no envio das credenciais.", 503) from exc
+
+
+def send_test_email(request, user):
+    config = settings()
+    if not config.smtp_host or not config.smtp_from:
+        raise DomainError("EMAIL_UNAVAILABLE", "Configure SMTP antes do envio de teste.", 503)
+    address = user.email or user.login
+    if "@" not in address:
+        raise DomainError("ADMIN_EMAIL_REQUIRED", "Cadastre um e-mail no administrador.", 422)
+    message = credential_message(
+        name=user.name,
+        email=address,
+        password="SENHA-DE-TESTE",
+        frontend_url=config.frontend_url,
+        sender=config.smtp_from,
+    )
+    message.replace_header("Subject", "[TESTE] IF-Arbitra | Modelo de acesso do capitão")
+    _send_message(message)
+    independent(
+        request,
+        Event.ADMIN,
+        user.id,
+        {"action": "TEST_EMAIL_SENT", "credentials_changed": False},
+        entity_type="USER",
+    )
+    return {"sent": True, "recipient": address, "credentials_changed": False}
 
 
 def _deliver_one(request, user_id, dispatch_id) -> str:

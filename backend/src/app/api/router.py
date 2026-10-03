@@ -4,6 +4,7 @@ from app.api.routes import (
     allocation,
     audit,
     auth,
+    maintenance,
     preferences,
     reservations,
     rounds,
@@ -24,4 +25,6 @@ for routes in (
     audit,
     reservations,
 ):
+    # Maintenance endpoints use the same administrator authorization boundary.
     router.include_router(routes.router)
+router.include_router(maintenance.router)
