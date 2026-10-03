@@ -28,7 +28,7 @@ def configured(monkeypatch, sent):
     )
     monkeypatch.setattr(
         "app.services.credential_dispatch._send_credentials",
-        lambda address, password: sent.append((address, password)),
+        lambda address, password, name: sent.append((address, password)),
     )
 
 
@@ -86,7 +86,7 @@ def test_failed_delivery_remains_pending_and_can_be_retried(world, client, monke
     ).json()["id"]
     original = __import__("app.services.credential_dispatch", fromlist=["_send_credentials"])
 
-    def fail_once(address, password):
+    def fail_once(address, password, name):
         if not sent:
             sent.append((address, password))
             raise DomainError("EMAIL_UNAVAILABLE", "SMTP indisponível", 503)

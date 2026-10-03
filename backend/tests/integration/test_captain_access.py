@@ -87,6 +87,10 @@ def test_only_captains_receive_credentials_and_role_changes_revoke_access(
 ):
     sent = []
     configured(monkeypatch, sent)
+    monkeypatch.setattr(
+        "app.services.credential_dispatch._send_credentials",
+        lambda address, password, name: sent.append((address, password, name)),
+    )
     as_user(client, world.admin)
     ordinary = client.post(
         "/api/admin/students", json={"name": "Integrante sem login", "email": "member@example.org"}
@@ -103,6 +107,7 @@ def test_only_captains_receive_credentials_and_role_changes_revoke_access(
     response = client.post("/api/admin/students/dispatch-credentials")
     assert response.status_code == 200 and response.json()["sent"] == 1
     assert sent[0][0] == "captain@example.org"
+    assert sent[0][2] == "Capitã cadastrada"
     assert client.post(f"/api/admin/students/{ordinary['id']}/access").status_code == 403
     login = client.post("/api/auth/login", json={"login": sent[0][0], "password": sent[0][1]})
     assert login.status_code == 200 and login.json()["is_captain"] is True

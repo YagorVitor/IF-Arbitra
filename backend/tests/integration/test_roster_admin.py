@@ -22,7 +22,7 @@ def test_student_removal_skips_dispatch_and_readdition_issues_new_credentials(
     )
     monkeypatch.setattr(
         "app.services.credential_dispatch._send_credentials",
-        lambda address, password: sent.append((address, password)),
+        lambda address, password, name: sent.append((address, password)),
     )
     as_user(client, world.admin)
     response = client.post(

@@ -1,10 +1,9 @@
-"""Administrator-triggered delivery of equal-length student credentials."""
+"""Administrator-triggered delivery of credentials exclusively to captains."""
 
 import secrets
 import smtplib
 import ssl
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from email.message import EmailMessage
 from uuid import uuid4
 
 from sqlalchemy import func, select
@@ -15,6 +14,7 @@ from app.core.errors import DomainError
 from app.core.security import hasher
 from app.db.models import User
 from app.db.session import SessionFactory
+from app.services.credential_email import credential_message
 
 PASSWORD_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 PASSWORD_LENGTH = 8
@@ -25,17 +25,14 @@ def new_password() -> str:
     return "".join(secrets.choice(PASSWORD_ALPHABET) for _ in range(PASSWORD_LENGTH))
 
 
-def _send_credentials(email: str, password: str):
+def _send_credentials(email: str, password: str, name: str):
     config = settings()
-    message = EmailMessage()
-    message["From"] = config.smtp_from
-    message["To"] = email
-    message["Subject"] = "IF-Arbitra: suas credenciais de acesso"
-    message.set_content(
-        "Suas credenciais para o IF-Arbitra:\n\n"
-        f"Usuário: {email}\n"
-        f"Senha: {password}\n\n"
-        "Aguarde a abertura da rodada pela administração para participar."
+    message = credential_message(
+        name=name,
+        email=email,
+        password=password,
+        frontend_url=config.frontend_url,
+        sender=config.smtp_from,
     )
     try:
         with smtplib.SMTP(config.smtp_host, config.smtp_port, timeout=5) as smtp:
@@ -73,7 +70,7 @@ def _deliver_one(request, user_id, dispatch_id) -> str:
         student.login = address
         student.password_hash = hasher.hash(password)
         db.flush()  # Resolve uniqueness errors before sending an email.
-        _send_credentials(address, password)
+        _send_credentials(address, password, student.name)
         student.active = True
         record(
             db,

@@ -123,7 +123,7 @@ export default function AdminCadastros() {
               <h2 className="text-lg font-semibold">Alunos ({currentStudents.length})</h2>
               <p className="text-sm text-gray-600">{currentStudents.filter((student) => student.is_captain).length} capitães; {pending} aguardando credenciais. Os demais integrantes não têm acesso.</p>
             </div>
-            <button type="button" disabled={busy || pending === 0} onClick={sendCredentials} className="app-button">{busy ? 'Aguarde...' : `Enviar credenciais (${pending})`}</button>
+            <button type="button" disabled={busy || pending === 0} onClick={sendCredentials} className="app-button">{busy ? 'Aguarde...' : `Enviar acessos aos capitães (${pending})`}</button>
           </div>
           {dispatch && <div role="status" className="p-3 rounded bg-blue-50 text-blue-900 text-sm">
             Lote: {dispatch.sent} enviados; {dispatch.pending_remaining} ainda pendentes. {dispatch.failed.length > 0 && `${dispatch.failed.length} falhas. Revise os endereços e tente novamente somente para os pendentes.`}
