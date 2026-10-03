@@ -13,24 +13,47 @@ export function useStudentDashboard() {
   const [group, setGroup] = useState(null);
 
   useEffect(() => {
-    async function loadDashboardData() {
+    let active = true;
+    let refreshing = false;
+    let shouldRefresh = false;
+    async function loadDashboardData(initial = false) {
+      if (refreshing) return;
+      refreshing = true;
       try {
-        setLoading(true);
-        setError(null);
+        if (initial) setLoading(true);
         const activeRound = roundId ? await roundService.getById(roundId) : await roundService.getActiveRound();
+        if (!active) return;
+        shouldRefresh = !activeRound || ['OPEN', 'PROCESSED'].includes(activeRound.status);
         
-        if (!activeRound) { setRound(null); setGroup(null); return; }
+        if (!activeRound) { setError(null); setRound(null); setGroup(null); return; }
 
         const groupData = await roundService.getMyGroup(activeRound.id);
+        if (!active) return;
 
+        setError(null);
         setRound(activeRound);
         setGroup(groupData && groupData.id ? groupData : null);
       } catch (err) {
-        setError(err.message || 'Erro ao carregar dados do painel.');
-      } finally { setLoading(false); }
+        if (active && initial) setError(err.message || 'Erro ao carregar dados do painel.');
+      } finally {
+        refreshing = false;
+        if (active && initial) setLoading(false);
+      }
     }
 
-    loadDashboardData();
+    function refreshWhileWaiting() {
+      if (active && shouldRefresh && document.visibilityState === 'visible') loadDashboardData();
+    }
+    loadDashboardData(true);
+    const timer = window.setInterval(refreshWhileWaiting, 30000);
+    window.addEventListener('focus', refreshWhileWaiting);
+    document.addEventListener('visibilitychange', refreshWhileWaiting);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshWhileWaiting);
+      document.removeEventListener('visibilitychange', refreshWhileWaiting);
+    };
   }, [roundId]);
 
   const getCurrentStage = () => {
