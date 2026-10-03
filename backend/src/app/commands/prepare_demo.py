@@ -26,7 +26,8 @@ def main():
             User(
                 name=f"Aluno de validação {i:02}",
                 login=f"qa-aluno-{i:02}",
-                password_hash=hasher.hash(password),
+                is_captain=i in (0, 6),
+                password_hash=hasher.hash(password) if i in (0, 6) else None,
             )
             for i in range(12)
         ]

@@ -36,7 +36,7 @@ export function Navbar() {
       <div className="app-topbar-center"><span className="app-topbar-eyebrow">Sistema de alocação de grupos</span><span>{roundName}</span></div>
       <div className="app-account">
         <span className="app-avatar" aria-hidden="true">{initials}</span>
-        <div className="app-account-name"><strong>{userName}</strong><span>{user?.role === 'ADMIN' ? 'Administrador' : 'Aluno'}</span></div>
+        <div className="app-account-name"><strong>{userName}</strong><span>{user?.role === 'ADMIN' ? 'Administrador' : 'Capitão'}</span></div>
         <button type="button" onClick={handleLogout} disabled={isLoggingOut} className="app-logout" title="Sair" aria-label="Sair"><LogOut size={18} /></button>
       </div>
     </header>

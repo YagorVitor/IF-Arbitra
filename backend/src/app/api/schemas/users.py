@@ -21,6 +21,11 @@ class UserInput(Input):
     phone: Annotated[str, Field(max_length=32)] | None = None
 
 
+class StudentProfileInput(Input):
+    name: Name
+    phone: Annotated[str, Field(max_length=32)] | None = None
+
+
 class CaptainInput(Input):
     is_captain: bool
 

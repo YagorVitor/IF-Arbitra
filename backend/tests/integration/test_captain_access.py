@@ -122,3 +122,18 @@ def test_only_captains_receive_credentials_and_role_changes_revoke_access(
     client.cookies.clear()
     client.cookies.set("if_arbitra_session", old_token)
     assert client.get("/api/auth/me").status_code == 401
+
+
+def test_captain_contact_update_is_admin_only_and_preserves_identity(world, client):
+    captain = world.users[0]
+    body = {"name": "Nome atualizado do capitão", "phone": "(16) 99999-9999"}
+    path = f"/api/admin/students/{captain.id}/profile"
+    as_user(client, captain)
+    assert client.put(path, json=body).status_code == 403
+    as_user(client, world.admin)
+    response = client.put(path, json=body)
+    assert response.status_code == 200 and response.json()["id"] == str(captain.id)
+    with world.db() as db:
+        row = db.get(User, captain.id)
+        assert row.name == body["name"] and row.phone == body["phone"]
+        assert row.is_captain and row.login == captain.login

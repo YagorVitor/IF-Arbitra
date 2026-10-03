@@ -10,6 +10,7 @@ from app.api.schemas.users import (
     CaptainInput,
     CredentialDispatchOut,
     StudentAccessOut,
+    StudentProfileInput,
     StudentSearchOut,
     UserInput,
     UserOut,
@@ -185,7 +186,7 @@ def create_student(data: UserInput, request: Request, user=Depends(admin)):
             Event.ADMIN,
             student.id,
             {"action": "STUDENT_CREATED"},
-            after={"name": student.name, "login": student.login},
+            after={"name": student.name, "login": student.login, "is_captain": student.is_captain},
             entity_type="USER",
         )
         return student
@@ -269,6 +270,33 @@ def set_captain(student_id: UUID, data: CaptainInput, request: Request, user=Dep
             {"action": "CAPTAIN_CHANGED"},
             before=before,
             after={"is_captain": student.is_captain},
+            entity_type="USER",
+        )
+        return student
+
+
+@router.put("/admin/students/{student_id}/profile", response_model=UserOut, tags=["Administração"])
+def update_student_profile(
+    student_id: UUID, data: StudentProfileInput, request: Request, user=Depends(admin)
+):
+    with SessionFactory.begin() as db:
+        student = db.scalar(
+            select(User).where(User.id == student_id, User.role == "STUDENT").with_for_update()
+        )
+        if not student or student.removed_at is not None:
+            raise DomainError("STUDENT_NOT_FOUND", "Aluno não encontrado.", 404)
+        before = {"name": student.name}
+        phone_changed = student.phone != data.phone
+        student.name = data.name
+        student.phone = data.phone
+        record(
+            db,
+            request,
+            Event.ADMIN,
+            student.id,
+            {"action": "STUDENT_PROFILE_UPDATED", "phone_changed": phone_changed},
+            before=before,
+            after={"name": student.name},
             entity_type="USER",
         )
         return student
