@@ -146,7 +146,9 @@ def _deliver_one(request, user_id, dispatch_id) -> str:
 
 def dispatch_credentials(request) -> dict:
     if not settings().email_delivery_configured:
-        raise DomainError("EMAIL_UNAVAILABLE", "Configure o serviço de e-mail antes do disparo.", 503)
+        raise DomainError(
+            "EMAIL_UNAVAILABLE", "Configure o serviço de e-mail antes do disparo.", 503
+        )
     dispatch_id = uuid4()
     with SessionFactory.begin() as db:
         recipients = db.execute(
