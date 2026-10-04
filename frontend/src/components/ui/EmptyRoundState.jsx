@@ -4,7 +4,7 @@ import { ArrowRight, CalendarClock, CalendarDays, Check, CircleHelp, ClipboardCh
 import { Link } from 'react-router-dom';
 
 const steps = [
-  { number: '01', icon: UsersRound, title: 'Formação dos grupos', text: 'O capitão confirma seis integrantes obrigatórios, incluindo ele, e um sétimo opcional.' },
+  { number: '01', icon: UsersRound, title: 'Formação dos grupos', text: 'O capitão confirma de cinco a sete integrantes, contando com ele.' },
   { number: '02', icon: ListOrdered, title: 'Preferências', text: 'O capitão ordena os servidores dentro do prazo informado na rodada.' },
   { number: '03', icon: Settings2, title: 'Processamento', text: 'Cada servidor recebe um grupo. As primeiras preferências são avaliadas antes das seguintes, com desempate pela confirmação.' },
   { number: '04', icon: ClipboardCheck, title: 'Resultado', text: 'A administração publica a alocação para consulta dos alunos.' },

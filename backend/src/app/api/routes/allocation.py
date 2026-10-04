@@ -39,10 +39,10 @@ def adjust(round_id: UUID, data: AdjustmentInput, request: Request, user=Depends
     response_model=AllocationRunSummaryOut,
     tags=["Alocação"],
 )
-def process(round_id: UUID, request: Request, user=Depends(admin)):
+def process(round_id: UUID, request: Request, close_early: bool = False, user=Depends(admin)):
     try:
         with SessionFactory.begin() as db:
-            run = process_allocation(db, request, round_id, user)
+            run = process_allocation(db, request, round_id, user, close_early=close_early)
             return {"id": run.id, "status": run.status, "input_fingerprint": run.input_fingerprint}
     except DomainError:
         raise

@@ -58,7 +58,7 @@ def round_views(db, rounds):
             submissions.get(r.id, 0),
             pending.get(r.id, 0),
             now,
-            sizes[(r.id, 6)],
+            sum(sizes[(r.id, size)] for size in (5, 6)),
             sizes[(r.id, 7)],
         )
         for r in rounds

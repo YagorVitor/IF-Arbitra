@@ -15,7 +15,7 @@ export const adminService = {
   createRound: (data) => api.post('/api/admin/rounds', data),
   updateRound: (id, data) => api.put(`/api/admin/rounds/${id}`, data),
   transitionRound: (id, action) => api.post(`/api/admin/rounds/${id}/transition`, { action }),
-  allocate: (id) => api.post(`/api/admin/rounds/${id}/allocate`),
+  allocate: (id, closeEarly = false) => api.post(`/api/admin/rounds/${id}/allocate${closeEarly ? '?close_early=true' : ''}`),
   results: (id) => api.get(`/api/rounds/${id}/results`),
   adjustAssignments: (id, data) => api.put(`/api/admin/rounds/${id}/assignments`, data),
   groups: (id) => api.get(`/api/admin/rounds/${id}/sextets`),

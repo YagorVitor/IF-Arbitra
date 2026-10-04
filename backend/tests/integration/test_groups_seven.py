@@ -42,7 +42,7 @@ def test_full_74_student_round_enforces_sizes_captain_quotas_and_unique_servers(
     )
     offset = 0
     groups = []
-    for size in [7] * 8 + [6] * 3:
+    for size in [7] * 8 + [6] * 2 + [5]:
         members = world.users[offset : offset + size]
         as_user(client, members[0])
         body = {
@@ -52,7 +52,7 @@ def test_full_74_student_round_enforces_sizes_captain_quotas_and_unique_servers(
         }
         if offset == 0:
             invalid = client.post(
-                f"/api/rounds/{rid}/sextets", json={**body, "members": body["members"][:5]}
+                f"/api/rounds/{rid}/sextets", json={**body, "members": body["members"][:4]}
             )
             assert (
                 invalid.status_code == 422 and invalid.json()["code"] == "INVALID_GROUP_COMPOSITION"
@@ -82,8 +82,8 @@ def test_full_74_student_round_enforces_sizes_captain_quotas_and_unique_servers(
             )
         groups.append(group)
         offset += size
-    assert offset == 74
-    for size in (6, 7):
+    assert offset == 73
+    for size in (5, 6, 7):
         as_user(client, world.users[74])
         response = client.post(
             f"/api/rounds/{rid}/sextets",
@@ -102,7 +102,7 @@ def test_full_74_student_round_enforces_sizes_captain_quotas_and_unique_servers(
         11,
     )
     admin_groups = client.get(f"/api/admin/rounds/{rid}/sextets").json()
-    assert sum(len(g["members"]) for g in admin_groups) == 74
+    assert sum(len(g["members"]) for g in admin_groups) == 73
     monkeypatch.setattr(
         "app.services.allocation.database_now",
         lambda db: world.round.preferences_close_at + timedelta(seconds=1),

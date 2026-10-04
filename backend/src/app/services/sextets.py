@@ -46,22 +46,26 @@ def register_sextet(db, request, round_id, user, data):
             "INVALID_TRIO_COMPOSITION", "O trio deve ter exatamente três alunos.", 422
         )
     if round_.formation_mode == "GROUPS":
-        if len(data.members) not in {6, 7}:
+        if len(data.members) not in {5, 6, 7}:
             raise DomainError(
                 "INVALID_GROUP_COMPOSITION",
-                "Informe seis integrantes obrigatórios, incluindo o capitão, e um sétimo opcional.",
+                "Informe de cinco a sete integrantes, incluindo o capitão.",
                 422,
             )
-        count = db.scalar(
+        size_query = (
             select(func.count())
             .select_from(Sextet)
-            .where(Sextet.round_id == round_id, Sextet.member_count == len(data.members))
+            .where(
+                Sextet.round_id == round_id,
+                Sextet.member_count == 7 if len(data.members) == 7 else Sextet.member_count < 7,
+            )
         )
-        limit = 3 if len(data.members) == 6 else 8
+        count = db.scalar(size_query)
+        limit = 8 if len(data.members) == 7 else 3
         if count >= limit:
             raise DomainError(
                 "GROUP_SIZE_LIMIT_REACHED",
-                f"Esta rodada já tem {limit} grupos com {len(data.members)} integrantes.",
+                "Esta rodada já atingiu o limite de grupos nesta faixa de tamanho.",
                 409,
             )
     elif round_.formation_mode == "SEXTET" and len(data.members) > 6:

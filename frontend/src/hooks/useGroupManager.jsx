@@ -48,7 +48,7 @@ export function useGroupManager(currentUser, initialRoundId) {
   }, [roundId, currentUser?.login]);
 
   const submitGroup = async (memberIds) => {
-    if (round?.formation_mode !== 'GROUPS' || ![6, 7].includes(memberIds.length)) { setError('Confirme seis integrantes obrigatórios e, se desejar, um sétimo.'); return; }
+    if (round?.formation_mode !== 'GROUPS' || ![5, 6, 7].includes(memberIds.length)) { setError('Confirme entre cinco e sete integrantes, incluindo você.'); return; }
     if (!round?.registration_open) { setError('A janela de confirmação desta rodada está encerrada.'); return; }
     setIsSubmitting(true); setError('');
     try {
@@ -65,7 +65,7 @@ export function useGroupManager(currentUser, initialRoundId) {
         const existing = await roundService.getMyGroup(roundId).catch(() => null);
         if (existing) { setExistingGroup(existing); return existing; }
       }
-      const messages = { CAPTAIN_AS_MEMBER: "Outro capitão não pode ser incluído no seu grupo.", CAPTAIN_REQUIRED: "Somente capitães cadastrados podem confirmar grupos.", INTEGRITY_CONFLICT: 'Um dos integrantes já pertence a outro grupo ativo.', STUDENT_ALREADY_IN_SEXTET: 'Um dos integrantes já pertence a outro grupo ativo.', REGISTRATION_WINDOW_CLOSED: 'A janela de confirmação desta rodada foi encerrada.', IDEMPOTENCY_CONFLICT: 'Esta confirmação já foi usada com outra composição.', INVALID_SEXTET_COMPOSITION: 'Selecione apenas alunos ativos.', INVALID_GROUP_COMPOSITION: 'Confirme seis integrantes, incluindo o capitão, e um sétimo opcional.', DUPLICATE_MEMBER: 'Selecione alunos diferentes.' };
+      const messages = { CAPTAIN_AS_MEMBER: "Outro capitão não pode ser incluído no seu grupo.", CAPTAIN_REQUIRED: "Somente capitães cadastrados podem confirmar grupos.", INTEGRITY_CONFLICT: 'Um dos integrantes já pertence a outro grupo ativo.', STUDENT_ALREADY_IN_SEXTET: 'Um dos integrantes já pertence a outro grupo ativo.', REGISTRATION_WINDOW_CLOSED: 'A janela de confirmação desta rodada foi encerrada.', IDEMPOTENCY_CONFLICT: 'Esta confirmação já foi usada com outra composição.', INVALID_SEXTET_COMPOSITION: 'Selecione apenas alunos ativos.', INVALID_GROUP_COMPOSITION: 'Confirme entre cinco e sete integrantes, incluindo o capitão.', DUPLICATE_MEMBER: 'Selecione alunos diferentes.' };
       setError(messages[err.code] || err.message || 'Falha ao confirmar o grupo.');
     } finally { setIsSubmitting(false); }
   };

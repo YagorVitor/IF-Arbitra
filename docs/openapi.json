@@ -2735,6 +2735,16 @@
               "title": "Round Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "close_early",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Close Early",
+              "type": "boolean"
+            }
           }
         ],
         "responses": {

@@ -20,7 +20,7 @@ from app.domain.allocation import Candidate, allocate, allocate_groups, allocate
 from app.services.rounds import eligible_staff, locked_round
 
 
-def process_allocation(db, request, round_id, user):
+def process_allocation(db, request, round_id, user, *, close_early=False):
     round_ = locked_round(db, round_id)
     previous = db.scalar(
         select(AllocationRun).where(
@@ -29,7 +29,9 @@ def process_allocation(db, request, round_id, user):
     )
     if previous:
         return previous
-    if round_.status != "OPEN" or database_now(db) < round_.preferences_close_at:
+    now = database_now(db)
+    early = now < round_.preferences_close_at
+    if round_.status != "OPEN" or (early and not close_early):
         raise DomainError(
             "ALLOCATION_NOT_READY", "A alocação só pode ser executada após o prazo de preferências."
         )
@@ -40,6 +42,11 @@ def process_allocation(db, request, round_id, user):
             .order_by(Sextet.registration_completed_at, Sextet.priority_sequence)
         )
     )
+    if early and (now < round_.registration_opens_at or not groups):
+        raise DomainError(
+            "ALLOCATION_NOT_READY",
+            "Aguarde o início da rodada e a confirmação de pelo menos um grupo.",
+        )
     staff = eligible_staff(db, round_id)
     reservations = []
     if round_.formation_mode == "GROUPS":
@@ -129,7 +136,7 @@ def process_allocation(db, request, round_id, user):
         request,
         Event.ALLOCATION_STARTED,
         run.id,
-        {"fingerprint": run.input_fingerprint},
+        {"fingerprint": run.input_fingerprint, "closed_early": early},
         entity_type="ALLOCATION_RUN",
     )
     algorithm = (

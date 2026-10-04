@@ -45,7 +45,7 @@ export default function MeuGrupo() {
       <div className="app-page-head">
         <div>
           <p className="app-eyebrow">{round?.name || 'Formação de grupos'}</p><h1 className="app-title">{isReadOnly ? `Meu ${groupName}` : `Formar ${groupName}`}</h1>
-          <p className="app-subtitle">{isReadOnly ? `Prioridade registrada na rodada: #${String(existingGroup.priority_sequence || 0).padStart(2, '0')}` : 'Você é o capitão. Escolha cinco integrantes obrigatórios e um sétimo opcional.'}</p>
+          <p className="app-subtitle">{isReadOnly ? `Prioridade registrada na rodada: #${String(existingGroup.priority_sequence || 0).padStart(2, '0')}` : 'Você é o capitão. Forme um grupo de cinco a sete pessoas, contando com você.'}</p>
         </div>
         {isReadOnly && <div className="app-pill"><CheckCircle2 size={14}/>Confirmado</div>}
       </div>

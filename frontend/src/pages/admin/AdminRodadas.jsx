@@ -99,9 +99,13 @@ export default function AdminRodadas() {
   }
 
   async function allocate(round) {
-    if (!window.confirm(`Processar a alocação oficial da rodada “${round.name}”? Confira antes os grupos e preferências; o resultado ficará pronto para publicação.`)) return;
+    const closeEarly = !round.can_process;
+    const message = closeEarly
+      ? `Encerrar os envios agora e processar a rodada “${round.name}”? Há ${round.registered} grupos confirmados e ${round.with_preferences} listas de preferências enviadas. Os capitães não poderão mais confirmar grupos nem alterar preferências. As respostas já enviadas serão preservadas. Você poderá revisar o resultado antes de publicá-lo.`
+      : `Processar a alocação oficial da rodada “${round.name}”? Confira antes os grupos e preferências; o resultado ficará pronto para publicação.`;
+    if (!window.confirm(message)) return;
     await run(async () => {
-      await adminService.allocate(round.id);
+      await adminService.allocate(round.id, closeEarly);
       setSelectedId(round.id);
       setResults(await adminService.results(round.id));
       setGroups(await adminService.groups(round.id));
@@ -135,7 +139,7 @@ export default function AdminRodadas() {
         <div className="app-section-head"><div><h2>{editingId ? 'Editar rascunho' : 'Criar rodada'}</h2><p>Defina a janela dos grupos, a janela de preferências e os servidores elegíveis.</p></div></div>
         <form onSubmit={saveRound} className="space-y-4">
           <label className="block text-sm">Nome da rodada<input required minLength={2} maxLength={160} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1 block w-full border rounded px-3 py-2" /></label>
-          <p className="text-sm app-muted">Cada servidor recebe um grupo. São permitidos até 8 grupos de 7 integrantes e 3 grupos de 6. O capitão está entre os seis obrigatórios. A alocação avalia a primeira preferência de todos antes da segunda, com desempate pela confirmação.</p>
+          <p className="text-sm app-muted">Cada servidor recebe um grupo. São permitidos até 8 grupos de 7 integrantes e 3 grupos de 5 ou 6. O capitão conta no grupo. A alocação avalia a primeira preferência de todos antes da segunda, com desempate pela confirmação.</p>
           <div className="grid sm:grid-cols-2 gap-4">
             {[
               ['registration_opens_at', 'Início da confirmação dos grupos'],
@@ -158,16 +162,16 @@ export default function AdminRodadas() {
         {!loading && rounds.length === 0 && <p className="text-sm text-gray-600">Nenhuma rodada criada.</p>}
         {rounds.map((round) => <article key={round.id} className="app-card app-card-pad space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold text-lg">{round.name}</h3><span className={`app-pill ${round.status === 'OPEN' ? '' : 'neutral'}`}>{({DRAFT:'Rascunho',OPEN:'Aberta',PROCESSED:'Processada',PUBLISHED:'Publicada',ARCHIVED:'Arquivada'})[round.status] || round.status}</span></div>
-          <p className="text-sm text-gray-600">{round.formation_mode === 'TRIOS' ? 'Trios' : 'Grupos'}: {round.registered} · Grupos de 6: {round.registered_six ?? 0}/3 · Grupos de 7: {round.registered_seven ?? 0}/8 · Preferências: {round.with_preferences} · Vagas para {round.formation_mode === 'TRIOS' ? 'trios' : 'grupos'}: {round.capacity} · {round.status === 'PROCESSED' || round.status === 'PUBLISHED' || round.status === 'ARCHIVED' ? `Pendentes: ${round.pending}` : `Excedentes: ${round.shortfall}`}</p>
+        <p className="text-sm text-gray-600">{round.formation_mode === 'TRIOS' ? 'Trios' : 'Grupos'}: {round.registered} · Grupos de 5 ou 6: {round.registered_six ?? 0}/3 · Grupos de 7: {round.registered_seven ?? 0}/8 · Preferências: {round.with_preferences} · Vagas para {round.formation_mode === 'TRIOS' ? 'trios' : 'grupos'}: {round.capacity} · {round.status === 'PROCESSED' || round.status === 'PUBLISHED' || round.status === 'ARCHIVED' ? `Pendentes: ${round.pending}` : `Excedentes: ${round.shortfall}`}</p>
           <p className="text-xs text-gray-600">Grupos: {displayDate(round.registration_opens_at)} a {displayDate(round.registration_closes_at)} · Preferências: {displayDate(round.preferences_open_at)} a {displayDate(round.preferences_close_at)}</p>
           <div className="app-actions pt-1">
             {round.status === 'DRAFT' && <><button disabled={busy} onClick={() => startEdit(round)} className="app-button secondary">Editar</button><button disabled={busy} onClick={() => transition(round, 'open')} className="app-button">Abrir</button></>}
-            {round.status === 'OPEN' && <button disabled={busy || !round.can_process} onClick={() => allocate(round)} className="app-button">Processar alocação</button>}
+            {round.status === 'OPEN' && <button disabled={busy || (!round.can_process && round.registered === 0)} onClick={() => allocate(round)} className="app-button">{round.can_process ? 'Processar alocação' : 'Encerrar envios e processar agora'}</button>}
             {round.status === 'PROCESSED' && <button disabled={busy} onClick={() => transition(round, 'publish')} className="app-button">Publicar resultados</button>}
             {round.status === 'PUBLISHED' && <button disabled={busy} onClick={() => transition(round, 'archive')} className="app-button secondary">Arquivar</button>}
             <button disabled={busy} onClick={() => inspect(round)} className="app-button ghost">Ver grupos e resultados</button>
           </div>
-          {round.status === 'OPEN' && !round.can_process && <p className="text-xs text-amber-800">O processamento ficará disponível após o encerramento das preferências.</p>}
+          {round.status === 'OPEN' && !round.can_process && <p className="text-xs text-amber-800">O prazo ainda está aberto. Você pode encerrar os envios antes do horário e processar as respostas já recebidas.</p>}
         </article>)}
       </section>
       {selectedId && <section className="app-card app-card-pad space-y-3">
