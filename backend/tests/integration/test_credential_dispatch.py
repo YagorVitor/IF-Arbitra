@@ -1,12 +1,14 @@
 """Credentials are sent only by an explicit administrator action."""
 
 import json
-from types import SimpleNamespace
+import re
 from uuid import UUID
 
 import pytest
+from pydantic import SecretStr
 from sqlalchemy import select
 
+from app.core.config import Settings
 from app.core.errors import DomainError
 from app.db.models import AuditEvent, User
 from tests.support import as_user
@@ -17,13 +19,16 @@ pytestmark = pytest.mark.integration
 def configured(monkeypatch, sent):
     monkeypatch.setattr(
         "app.services.credential_dispatch.settings",
-        lambda: SimpleNamespace(
+        lambda: Settings(
+            _env_file=None,
+            database_url="postgresql+psycopg://test:test@localhost/arbitra_test",
             smtp_host="smtp.test",
             smtp_port=587,
             smtp_from="IF-Arbitra <noreply@test.invalid>",
             smtp_starttls=True,
             smtp_username=None,
             smtp_password=None,
+            resend_api_key=None,
         ),
     )
     monkeypatch.setattr(
@@ -135,3 +140,51 @@ def test_legacy_pending_login_becomes_email_on_dispatch(world, client, monkeypat
     with world.db() as db:
         user = db.scalar(select(User).where(User.email == "legacy@example.org"))
         assert user.login == user.email
+
+
+def test_resend_dispatch_sends_login_password_that_authenticates(world, client, monkeypatch):
+    config = Settings(
+        _env_file=None,
+        database_url="postgresql+psycopg://test:test@localhost/arbitra_test",
+        resend_api_key=SecretStr("re_test_secret"),
+        resend_from="IF-Arbitra <acesso@example.org>",
+        frontend_url="https://if-arbitra-frontend.vercel.app",
+    )
+    sent = []
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+    def capture(*args, **kwargs):
+        sent.append(kwargs["json"])
+        return Response()
+
+    monkeypatch.setattr("app.services.credential_dispatch.settings", lambda: config)
+    monkeypatch.setattr("app.services.credential_dispatch.httpx.post", capture)
+    as_user(client, world.admin)
+    for is_captain, email in ((True, "captain@example.org"), (False, "member@example.org")):
+        response = client.post(
+            "/api/admin/students",
+            json={"name": "Teste Resend", "email": email, "is_captain": is_captain},
+        )
+        assert response.status_code == 201, response.text
+    response = client.post("/api/admin/students/dispatch-credentials")
+    assert response.status_code == 200, response.text
+    assert response.json()["eligible"] == response.json()["sent"] == 1
+    assert len(sent) == 1 and sent[0]["to"] == ["captain@example.org"]
+    password = re.search(r"^Senha: (\S+)$", sent[0]["text"], re.MULTILINE).group(1)
+    assert password != "SENHA-DE-TESTE"
+    assert password in sent[0]["html"]
+    assert config.frontend_url in sent[0]["html"]
+    assert client.post("/api/admin/students/dispatch-credentials").json()["sent"] == 0
+    client.cookies.clear()
+    response = client.post(
+        "/api/auth/login", json={"login": "captain@example.org", "password": password}
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["is_captain"] is True
+    assert client.get("/api/admin/students").status_code == 403
+    with world.db() as db:
+        events = list(db.scalars(select(AuditEvent)))
+        assert password not in json.dumps([e.payload for e in events])

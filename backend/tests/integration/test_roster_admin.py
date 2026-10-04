@@ -1,11 +1,11 @@
 """Administrators manage the seeded roster without deleting round history."""
 
-from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
 from sqlalchemy import select
 
+from app.core.config import Settings
 from app.db.models import User
 from tests.support import as_user, register
 
@@ -18,7 +18,13 @@ def test_student_removal_skips_dispatch_and_readdition_issues_new_credentials(
     sent = []
     monkeypatch.setattr(
         "app.services.credential_dispatch.settings",
-        lambda: SimpleNamespace(smtp_host="smtp.test", smtp_from="noreply@example.org"),
+        lambda: Settings(
+            _env_file=None,
+            database_url="postgresql+psycopg://test:test@localhost/arbitra_test",
+            smtp_host="smtp.test",
+            smtp_from="noreply@example.org",
+            resend_api_key=None,
+        ),
     )
     monkeypatch.setattr(
         "app.services.credential_dispatch._send_credentials",

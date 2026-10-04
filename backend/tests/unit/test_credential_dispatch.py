@@ -1,10 +1,9 @@
-from types import SimpleNamespace
-
 import httpx
 import pytest
 from pydantic import SecretStr, ValidationError
 
 from app.api.schemas.users import UserInput
+from app.core.config import Settings
 from app.core.errors import DomainError
 from app.services import credential_dispatch
 from app.services.credential_dispatch import PASSWORD_ALPHABET, PASSWORD_LENGTH, new_password
@@ -31,7 +30,9 @@ def test_random_passwords_have_the_same_length_and_unambiguous_alphabet():
 
 
 def test_resend_message_contains_rendered_email_and_uses_secret_key(monkeypatch):
-    config = SimpleNamespace(
+    config = Settings(
+        _env_file=None,
+        database_url="postgresql+psycopg://test:test@localhost/arbitra_test",
         resend_api_key=SecretStr("re_test_secret"),
         resend_from="IF-Arbitra <onboarding@resend.dev>",
     )
@@ -67,7 +68,9 @@ def test_resend_message_contains_rendered_email_and_uses_secret_key(monkeypatch)
 
 
 def test_resend_http_failure_becomes_safe_email_error(monkeypatch):
-    config = SimpleNamespace(
+    config = Settings(
+        _env_file=None,
+        database_url="postgresql+psycopg://test:test@localhost/arbitra_test",
         resend_api_key=SecretStr("re_test_secret"),
         resend_from="onboarding@resend.dev",
     )

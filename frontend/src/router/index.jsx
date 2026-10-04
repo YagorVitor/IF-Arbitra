@@ -7,10 +7,16 @@ import AuthLayout from '../layouts/AuthLayout';
 import DashboardLayout from "../layouts/DashboardLayout";
 
 import Login from "../pages/Auth/Login";
+import HomeAluno from '../pages/aluno/HomeAluno';
+import MeuGrupo from '../pages/aluno/MeuGrupo';
+import Preferencias from '../pages/aluno/Preferencias';
+import ResultadoAluno from '../pages/aluno/ResultadoAluno';
+import AdminOverview from '../pages/admin/AdminOverview';
+import AdminRodadas from '../pages/admin/AdminRodadas';
+import AdminCadastros from '../pages/admin/AdminCadastros';
+import AdminAuditoria from '../pages/admin/AdminAuditoria';
 
-const page = (loader) => async () => ({ Component: (await loader()).default });
-
-function AdminRouteError() {
+function RouteError() {
     const error = useRouteError();
     const failedChunk = /failed to fetch dynamically imported module|importing a module script failed/i
         .test(error?.message ?? '');
@@ -18,7 +24,7 @@ function AdminRouteError() {
     return (
         <main className="flex min-h-screen items-center justify-center bg-[#f3f7f4] p-5 text-slate-900">
             <section role="alert" className="w-full max-w-xl rounded-2xl border border-emerald-900/10 bg-white p-7 shadow-sm sm:p-9">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-800">IF-Arbitra · Administração</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-800">IF-Arbitra</p>
                 <h1 className="mt-3 text-2xl font-semibold tracking-tight">
                     {failedChunk ? 'Esta tela precisa ser atualizada' : 'Não foi possível abrir esta tela'}
                 </h1>
@@ -47,6 +53,7 @@ export const router = createBrowserRouter([
     {
         path: '/auth',
         element: <AuthLayout/>,
+        errorElement: <RouteError />,
         children: [
             {
                 index: true,
@@ -60,18 +67,19 @@ export const router = createBrowserRouter([
             {
                 path: '/aluno',
                 element: <DashboardLayout/>,
+                errorElement: <RouteError />,
                 children: [
                     {
                         index: true,
-                        lazy: page(() => import('../pages/aluno/HomeAluno')),
+                        element: <HomeAluno />,
                     },
                     {
                         path: '/aluno/grupo',
-                        lazy: page(() => import('../pages/aluno/MeuGrupo'))
+                        element: <MeuGrupo />
                     },
                     {
                         path: '/aluno/grupo/:roundId',
-                        lazy: page(() => import('../pages/aluno/MeuGrupo'))
+                        element: <MeuGrupo />
                     },
                     {
                         path: '/aluno/sexteto',
@@ -85,19 +93,19 @@ export const router = createBrowserRouter([
                     },
                     {
                         path: '/aluno/preferencias',
-                        lazy: page(() => import('../pages/aluno/Preferencias'))
+                        element: <Preferencias />
                     },
                     {
                         path: '/aluno/preferencias/:roundId',
-                        lazy: page(() => import('../pages/aluno/Preferencias'))
+                        element: <Preferencias />
                     },
                     {
                         path: '/aluno/resultado',
-                        lazy: page(() => import('../pages/aluno/ResultadoAluno'))
+                        element: <ResultadoAluno />
                     },
                     {
                         path: '/aluno/resultado/:roundId',
-                        lazy: page(() => import('../pages/aluno/ResultadoAluno'))
+                        element: <ResultadoAluno />
                     }
                 ]
             }
@@ -109,12 +117,12 @@ export const router = createBrowserRouter([
             {
                 path: '/admin',
                 element: <DashboardLayout/>,
-                errorElement: <AdminRouteError />,
+                errorElement: <RouteError />,
                 children: [
-                    { index: true, lazy: page(() => import('../pages/admin/AdminOverview')) },
-                    { path: 'rodadas', lazy: page(() => import('../pages/admin/AdminRodadas')) },
-                    { path: 'cadastros', lazy: page(() => import('../pages/admin/AdminCadastros')) },
-                    { path: 'auditoria', lazy: page(() => import('../pages/admin/AdminAuditoria')) },
+                    { index: true, element: <AdminOverview /> },
+                    { path: 'rodadas', element: <AdminRodadas /> },
+                    { path: 'cadastros', element: <AdminCadastros /> },
+                    { path: 'auditoria', element: <AdminAuditoria /> },
                 ],
             },
         ],
