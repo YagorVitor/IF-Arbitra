@@ -30,7 +30,7 @@ export const roundService = {
   async getCurrentRound() {
     const rounds = await this.getAllOrdered();
     return rounds.find((round) => round.registration_open || round.preferences_open)
-      || rounds[0]
+      || rounds.find((round) => round.status !== 'ARCHIVED')
       || null;
   },
 
