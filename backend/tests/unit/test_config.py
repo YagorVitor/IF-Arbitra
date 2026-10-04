@@ -1,5 +1,5 @@
 import pytest
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
 
 from app.core.config import Settings
 
@@ -75,6 +75,22 @@ def test_production_requires_email_delivery_configuration():
         smtp_host="smtp.example.edu.br",
         smtp_from="IF-Arbitra <noreply@example.edu.br>",
     )
+
+
+def test_production_accepts_resend_without_smtp():
+    settings = configured(
+        environment="production",
+        resend_api_key="re_test_key",
+        resend_from="IF-Arbitra <acesso@example.edu.br>",
+    )
+    assert settings.email_delivery_configured
+    assert settings.email_sender == "IF-Arbitra <acesso@example.edu.br>"
+    assert settings.resend_api_key == SecretStr("re_test_key")
+
+
+def test_resend_configuration_requires_sender():
+    with pytest.raises(ValidationError):
+        configured(environment="production", resend_api_key="re_test_key")
 
 
 def test_database_url_must_be_explicit(monkeypatch):

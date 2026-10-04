@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +22,24 @@ class Settings(BaseSettings):
     smtp_password: str | None = None
     smtp_from: str | None = None
     smtp_starttls: bool = True
+    resend_api_key: SecretStr | None = None
+    resend_from: str | None = None
+
+    @property
+    def uses_resend(self) -> bool:
+        return bool(self.resend_api_key and self.resend_api_key.get_secret_value().strip())
+
+    @property
+    def email_delivery_configured(self) -> bool:
+        if self.uses_resend:
+            return bool(self.resend_from)
+        return bool(self.smtp_host and self.smtp_from)
+
+    @property
+    def email_sender(self) -> str | None:
+        if self.uses_resend:
+            return self.resend_from
+        return self.smtp_from
 
     @model_validator(mode="after")
     def production_safety(self):
@@ -52,9 +70,9 @@ class Settings(BaseSettings):
                 raise ValueError("Produção exige HTTPS e cookies seguros")
             if "local-only" in self.database_url:
                 raise ValueError("Configure a credencial de produção")
-            if not all((self.smtp_host, self.smtp_from)):
-                raise ValueError("Produção exige SMTP")
-            if not self.smtp_starttls:
+            if not self.email_delivery_configured:
+                raise ValueError("Produção exige Resend ou SMTP configurado")
+            if not self.resend_api_key and not self.smtp_starttls:
                 raise ValueError("Produção exige SMTP_STARTTLS=true")
         return self
 

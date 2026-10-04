@@ -4,8 +4,10 @@ import secrets
 import smtplib
 import ssl
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from email.utils import getaddresses
 from uuid import uuid4
 
+import httpx
 from sqlalchemy import func, select
 
 from app.core.audit import Event, independent, record
@@ -32,13 +34,16 @@ def _send_credentials(email: str, password: str, name: str):
         email=email,
         password=password,
         frontend_url=config.frontend_url,
-        sender=config.smtp_from,
+        sender=config.email_sender,
     )
     _send_message(message)
 
 
 def _send_message(message):
     config = settings()
+    if config.uses_resend:
+        _send_resend_message(message, config)
+        return
     try:
         with smtplib.SMTP(config.smtp_host, config.smtp_port, timeout=5) as smtp:
             if config.smtp_starttls:
@@ -50,10 +55,35 @@ def _send_message(message):
         raise DomainError("EMAIL_UNAVAILABLE", "Falha no envio das credenciais.", 503) from exc
 
 
+def _send_resend_message(message, config):
+    if not config.uses_resend or not config.resend_from:
+        raise DomainError("EMAIL_UNAVAILABLE", "Configure o Resend antes do envio.", 503)
+    html_part = message.get_body(preferencelist=("html",))
+    plain_part = message.get_body(preferencelist=("plain",))
+    recipients = [address for _, address in getaddresses([str(message["To"])]) if address]
+    payload = {
+        "from": config.resend_from,
+        "to": recipients,
+        "subject": str(message["Subject"]),
+        "text": plain_part.get_content() if plain_part else "",
+        "html": html_part.get_content() if html_part else "",
+    }
+    try:
+        response = httpx.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {config.resend_api_key.get_secret_value()}"},
+            json=payload,
+            timeout=10,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise DomainError("EMAIL_UNAVAILABLE", "Falha no envio das credenciais.", 503) from exc
+
+
 def send_test_email(request, user):
     config = settings()
-    if not config.smtp_host or not config.smtp_from:
-        raise DomainError("EMAIL_UNAVAILABLE", "Configure SMTP antes do envio de teste.", 503)
+    if not config.email_delivery_configured:
+        raise DomainError("EMAIL_UNAVAILABLE", "Configure o serviço de e-mail antes do teste.", 503)
     address = user.email or user.login
     if "@" not in address:
         raise DomainError("ADMIN_EMAIL_REQUIRED", "Cadastre um e-mail no administrador.", 422)
@@ -62,7 +92,7 @@ def send_test_email(request, user):
         email=address,
         password="SENHA-DE-TESTE",
         frontend_url=config.frontend_url,
-        sender=config.smtp_from,
+        sender=config.email_sender,
     )
     message.replace_header("Subject", "[TESTE] IF-Arbitra | Modelo de acesso do capitão")
     _send_message(message)
@@ -115,8 +145,8 @@ def _deliver_one(request, user_id, dispatch_id) -> str:
 
 
 def dispatch_credentials(request) -> dict:
-    if not settings().smtp_host or not settings().smtp_from:
-        raise DomainError("EMAIL_UNAVAILABLE", "Configure SMTP antes do disparo.", 503)
+    if not settings().email_delivery_configured:
+        raise DomainError("EMAIL_UNAVAILABLE", "Configure o serviço de e-mail antes do disparo.", 503)
     dispatch_id = uuid4()
     with SessionFactory.begin() as db:
         recipients = db.execute(

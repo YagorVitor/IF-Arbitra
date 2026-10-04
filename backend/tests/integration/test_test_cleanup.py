@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from pydantic import SecretStr
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 
@@ -98,3 +99,36 @@ def test_test_email_only_targets_admin_and_does_not_issue_credentials(world, cli
     assert "SENHA-DE-TESTE" in sent[0].get_body(preferencelist=("plain",)).get_content()
     with world.db() as db:
         assert {str(u.id): u.password_hash for u in db.scalars(select(User))} == before
+
+
+def test_test_email_uses_resend_and_sends_only_to_admin(world, client, monkeypatch):
+    from app.core.config import settings
+
+    calls = []
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+    monkeypatch.setattr(settings(), "resend_api_key", SecretStr("re_test_secret"))
+    monkeypatch.setattr(settings(), "resend_from", "IF-Arbitra <onboarding@resend.dev>")
+    monkeypatch.setattr(
+        "app.services.credential_dispatch.httpx.post",
+        lambda *args, **kwargs: calls.append((args, kwargs)) or Response(),
+    )
+    with world.db.begin() as db:
+        db.get(User, world.admin.id).email = "admin@example.org"
+
+    as_user(client, world.admin)
+    response = client.post("/api/admin/email/test")
+
+    assert response.status_code == 200, response.text
+    assert response.json()["recipient"] == "admin@example.org"
+    assert len(calls) == 1
+    args, kwargs = calls[0]
+    assert args[0] == "https://api.resend.com/emails"
+    assert kwargs["headers"]["Authorization"] == "Bearer re_test_secret"
+    assert kwargs["json"]["from"] == "IF-Arbitra <onboarding@resend.dev>"
+    assert kwargs["json"]["to"] == ["admin@example.org"]
+    assert kwargs["json"]["subject"].startswith("[TESTE]")
+    assert "SENHA-DE-TESTE" in kwargs["json"]["text"]
